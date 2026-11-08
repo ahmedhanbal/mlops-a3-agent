@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+mlruns/
+mlflow.db
+mlartifacts/
+models/
+.env
+*.egg-info/
+/dvc-remote/
+.dvc/config.local
+.dvc/tmp
+.dvc/cache
