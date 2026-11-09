@@ -1,0 +1,13 @@
+# Data is versioned with `dvc add data/dataset.csv` (pointer: data/dataset.csv.dvc).
+# This pipeline stage reproduces the exported model from the tracked dataset.
+stages:
+  train:
+    cmd: python -m training.train --dataset data/dataset.csv --tracking-uri sqlite:///mlflow.db
+    deps:
+      - data/dataset.csv
+      - training/train.py
+      - training/pipeline_steps.py
+    params: []
+    outs:
+      - models/model.joblib:
+          cache: false
