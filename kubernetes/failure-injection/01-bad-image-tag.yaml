@@ -1,0 +1,7 @@
+# Injected failure #1: non-existent image tag -> ErrImagePull / ImagePullBackOff.
+#   kubectl -n mlops-agent set image deploy/iris-inference api=mlops-inference:does-not-exist
+# Recover: kubectl -n mlops-agent rollout undo deploy/iris-inference
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: failure-injection-note, namespace: mlops-agent}
+data: {scenario: "bad-image-tag"}

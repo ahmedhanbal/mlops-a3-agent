@@ -1,0 +1,8 @@
+# Injected failure #2: wrong MODEL_PATH in the ConfigMap -> pods Running but readiness (/ready -> 503) fails.
+#   kubectl -n mlops-agent patch configmap iris-inference-config --type merge -p '{"data":{"MODEL_PATH":"models/missing.joblib"}}'
+#   kubectl -n mlops-agent rollout restart deploy/iris-inference
+# Recover: kubectl apply -f kubernetes/configmap.yaml && kubectl -n mlops-agent rollout restart deploy/iris-inference
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: failure-injection-note-2, namespace: mlops-agent}
+data: {scenario: "bad-model-path"}

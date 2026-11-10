@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: iris-inference
+  namespace: mlops-agent
+  labels:
+    app: iris-inference
+spec:
+  type: ClusterIP
+  selector:
+    app: iris-inference
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
