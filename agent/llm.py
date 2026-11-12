@@ -10,7 +10,7 @@ import json
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from agent.config import Settings
 from agent.schemas import ToolCall
