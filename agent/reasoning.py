@@ -93,6 +93,10 @@ def correlate(results: list[ToolResult], query: str = "", context: dict[str, Any
         best_id = b["run_id"]
         rep.add(rep.facts, f"MLflow: best of the {d['considered_runs']} most recent finished runs by {d['metric']} is run {_short(best_id)} "
                            f"({d['metric']}={b['metrics'].get(d['metric'])}, params {b['params']}, started {b['started']}).")
+        top = d["ranking"][0][d["metric"]]
+        ties = [x["run_id"] for x in d["ranking"] if x[d["metric"]] == top]
+        if len(ties) > 1:
+            rep.add(rep.uncertainties, f"MLflow: {len(ties)} runs tie on {d['metric']}={top}; the choice among them rests on recency/other criteria, not on this metric.")
         for c in d["readiness"]["caveats"]:
             rep.add(rep.uncertainties, f"MLflow: {c}")
         if d["readiness"]["checks"].get("quality_gate") == "failed":
@@ -205,7 +209,13 @@ def correlate(results: list[ToolResult], query: str = "", context: dict[str, Any
             rep.add(rep.facts, "Retraining assessment: justified because " + "; ".join(retrain_reasons) + ".")
             rep.add(rep.actions, "Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it.")
         elif "find_best_run" in ok:
-            rep.add(rep.facts, f"Retraining assessment: not necessary on current evidence - no failed quality gate, freshness policy ({s.freshness_days} days) not exceeded, and no degradation results supplied.")
+            missing = [e.tool for e in results if not e.ok and e.status != "confirmation_required"]
+            if missing:
+                rep.add(rep.facts, "Retraining assessment: no retraining trigger found in the evidence that WAS collected (no failed quality gate, "
+                                   f"freshness policy of {s.freshness_days} days not exceeded, no degradation results supplied).")
+                rep.add(rep.uncertainties, f"The assessment is incomplete because evidence from {sorted(set(missing))} was unavailable; a failed pipeline run or unhealthy deployment cannot be excluded.")
+            else:
+                rep.add(rep.facts, f"Retraining assessment: not necessary on current evidence - no failed quality gate, freshness policy ({s.freshness_days} days) not exceeded, and no degradation results supplied.")
             rep.add(rep.uncertainties, "No online performance/drift monitoring data is available; supply degradation results if you have them.")
         else:
             rep.add(rep.uncertainties, "Retraining need cannot be determined without MLflow evidence (quality gate, age) or supplied degradation results.")
