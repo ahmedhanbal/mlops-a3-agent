@@ -1,4 +1,5 @@
 """FastAPI interface of the agent: request validation -> Agent -> evidence-based response."""
+
 from __future__ import annotations
 
 import hmac

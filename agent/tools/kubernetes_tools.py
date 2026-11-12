@@ -5,6 +5,7 @@ Safety model
   * state-changing tools additionally need explicit confirmation (enforced by the registry);
   * pod logs are redacted before being returned.
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -77,7 +78,7 @@ def _age(ts: Any) -> str | None:
 
 def _container_states(pod: Any) -> list[dict[str, Any]]:
     out = []
-    for cs in (pod.status.container_statuses or []):
+    for cs in pod.status.container_statuses or []:
         st: dict[str, Any] = {"name": cs.name, "ready": cs.ready, "restart_count": cs.restart_count, "image": cs.image}
         if cs.state and cs.state.waiting:
             st["waiting_reason"] = cs.state.waiting.reason
@@ -110,8 +111,15 @@ def _pod_view(pod: Any) -> dict[str, Any]:
 
 def _events(core: Any, ns: str, field_selector: str | None = None, limit: int = 15) -> list[dict[str, Any]]:
     evs = core.list_namespaced_event(ns, field_selector=field_selector).items
-    evs = sorted(evs, key=lambda e: e.last_timestamp or e.event_time or e.metadata.creation_timestamp or dt.datetime.min.replace(tzinfo=dt.timezone.utc), reverse=True)
-    return [{"type": e.type, "reason": e.reason, "object": e.involved_object.name, "message": (e.message or "")[:240], "count": e.count} for e in evs[:limit]]
+    evs = sorted(
+        evs,
+        key=lambda e: e.last_timestamp or e.event_time or e.metadata.creation_timestamp or dt.datetime.min.replace(tzinfo=dt.timezone.utc),
+        reverse=True,
+    )
+    return [
+        {"type": e.type, "reason": e.reason, "object": e.involved_object.name, "message": (e.message or "")[:240], "count": e.count}
+        for e in evs[:limit]
+    ]
 
 
 def _app_pods(core: Any, ns: str) -> list[Any]:
@@ -126,9 +134,13 @@ def list_workloads(args: NsArgs) -> dict[str, Any]:
     return {
         "namespace": ns,
         "deployments": [
-            {"name": d.metadata.name, "desired": d.spec.replicas, "ready": d.status.ready_replicas or 0,
-             "available": d.status.available_replicas or 0,
-             "images": [c.image for c in d.spec.template.spec.containers]}
+            {
+                "name": d.metadata.name,
+                "desired": d.spec.replicas,
+                "ready": d.status.ready_replicas or 0,
+                "available": d.status.available_replicas or 0,
+                "images": [c.image for c in d.spec.template.spec.containers],
+            }
             for d in deployments
         ],
         "pods": [_pod_view(p) for p in pods],
@@ -141,13 +153,18 @@ def get_pod_details(args: PodArgs) -> dict[str, Any]:
     pod = core.read_namespaced_pod(args.pod_name, ns)
     try:
         raw = core.read_namespaced_pod_log(args.pod_name, ns, tail_lines=args.tail_lines)
-        logs = [redact(line) for line in raw.splitlines()[-args.tail_lines:]]
+        logs = [redact(line) for line in raw.splitlines()[-args.tail_lines :]]
         log_error = None
     except Exception as exc:  # noqa: BLE001 - e.g. container never started
         logs, log_error = [], f"logs unavailable: {type(exc).__name__}"
     probes = {c.name: {"readiness": bool(c.readiness_probe), "liveness": bool(c.liveness_probe)} for c in pod.spec.containers}
-    return {**_pod_view(pod), "probes_configured": probes, "log_tail": logs, "log_error": log_error,
-            "events": _events(core, ns, f"involvedObject.name={args.pod_name}")}
+    return {
+        **_pod_view(pod),
+        "probes_configured": probes,
+        "log_tail": logs,
+        "log_error": log_error,
+        "events": _events(core, ns, f"involvedObject.name={args.pod_name}"),
+    }
 
 
 def list_services(args: NsArgs) -> dict[str, Any]:
@@ -161,11 +178,17 @@ def list_services(args: NsArgs) -> dict[str, Any]:
             not_ready = sum(len(s.not_ready_addresses or []) for s in (ep.subsets or []))
         except Exception:  # noqa: BLE001
             ready = not_ready = None
-        out.append({
-            "name": svc.metadata.name, "type": svc.spec.type, "cluster_ip": svc.spec.cluster_ip,
-            "ports": [{"port": p.port, "target_port": str(p.target_port)} for p in (svc.spec.ports or [])],
-            "selector": svc.spec.selector, "ready_endpoints": ready, "not_ready_endpoints": not_ready,
-        })
+        out.append(
+            {
+                "name": svc.metadata.name,
+                "type": svc.spec.type,
+                "cluster_ip": svc.spec.cluster_ip,
+                "ports": [{"port": p.port, "target_port": str(p.target_port)} for p in (svc.spec.ports or [])],
+                "selector": svc.spec.selector,
+                "ready_endpoints": ready,
+                "not_ready_endpoints": not_ready,
+            }
+        )
     return {"namespace": ns, "services": out}
 
 
@@ -178,7 +201,9 @@ def _unhealthy(core: Any, ns: str) -> list[dict[str, Any]]:
             if c.get("waiting_reason"):
                 reasons.append(f"{c['name']} waiting: {c['waiting_reason']}")
             if c["restart_count"]:
-                reasons.append(f"{c['name']} restarted {c['restart_count']}x (last: {c.get('last_terminated_reason', 'n/a')}, exit {c.get('last_exit_code', 'n/a')})")
+                reasons.append(
+                    f"{c['name']} restarted {c['restart_count']}x (last: {c.get('last_terminated_reason', 'n/a')}, exit {c.get('last_exit_code', 'n/a')})"
+                )
         if v["phase"] not in ("Running", "Succeeded"):
             reasons.append(f"phase {v['phase']}")
         if v["phase"] == "Running" and not v["ready"]:
@@ -202,17 +227,20 @@ def get_deployed_version(args: DeployArgs) -> dict[str, Any]:
     labels = dict(d.spec.template.metadata.labels or {})
     cm_data: dict[str, str] = {}
     for c in d.spec.template.spec.containers:
-        for ref in (c.env_from or []):
+        for ref in c.env_from or []:
             if ref.config_map_ref:
                 cm_data.update(_core().read_namespaced_config_map(ref.config_map_ref.name, ns).data or {})
     return {
-        "deployment": args.deployment, "namespace": ns, "images": images,
+        "deployment": args.deployment,
+        "namespace": ns,
+        "images": images,
         "image_tags": [i.rsplit(":", 1)[1] if ":" in i.split("/")[-1] else "latest(implicit)" for i in images],
         "app_version_label": labels.get("app.kubernetes.io/version"),
         "config_app_version": cm_data.get("APP_VERSION"),
         "model_run_id": cm_data.get("MODEL_RUN_ID"),
         "dataset_version": cm_data.get("DATASET_VERSION"),
-        "generation": d.metadata.generation, "observed_generation": d.status.observed_generation,
+        "generation": d.metadata.generation,
+        "observed_generation": d.status.observed_generation,
     }
 
 
@@ -230,15 +258,50 @@ def diagnose_deployment(args: DeployArgs) -> dict[str, Any]:
         for c in p["containers"]:
             wr = c.get("waiting_reason")
             if wr in ("ImagePullBackOff", "ErrImagePull"):
-                findings.append({"severity": "high", "issue": "image cannot be pulled (wrong tag/registry/credentials)", "pod": p["name"], "evidence": f"{wr}: {c.get('waiting_message')}"})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "issue": "image cannot be pulled (wrong tag/registry/credentials)",
+                        "pod": p["name"],
+                        "evidence": f"{wr}: {c.get('waiting_message')}",
+                    }
+                )
             elif wr == "CrashLoopBackOff":
-                findings.append({"severity": "high", "issue": "container crashes on start", "pod": p["name"], "evidence": f"CrashLoopBackOff, last exit {c.get('last_exit_code')}, {c.get('last_terminated_reason')}"})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "issue": "container crashes on start",
+                        "pod": p["name"],
+                        "evidence": f"CrashLoopBackOff, last exit {c.get('last_exit_code')}, {c.get('last_terminated_reason')}",
+                    }
+                )
             if c.get("last_terminated_reason") == "OOMKilled":
-                findings.append({"severity": "high", "issue": "container OOMKilled - memory limit too low", "pod": p["name"], "evidence": "last terminated reason OOMKilled"})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "issue": "container OOMKilled - memory limit too low",
+                        "pod": p["name"],
+                        "evidence": "last terminated reason OOMKilled",
+                    }
+                )
         if p["phase"] == "Running" and not p["ready"] and not any(c.get("waiting_reason") for c in p["containers"]):
-            findings.append({"severity": "high", "issue": "pod running but failing readiness probe", "pod": p["name"], "evidence": "Ready=False while phase=Running"})
+            findings.append(
+                {
+                    "severity": "high",
+                    "issue": "pod running but failing readiness probe",
+                    "pod": p["name"],
+                    "evidence": "Ready=False while phase=Running",
+                }
+            )
         if p["phase"] == "Pending":
-            findings.append({"severity": "high", "issue": "pod Pending (unschedulable or waiting for resources)", "pod": p["name"], "evidence": "phase Pending"})
+            findings.append(
+                {
+                    "severity": "high",
+                    "issue": "pod Pending (unschedulable or waiting for resources)",
+                    "pod": p["name"],
+                    "evidence": "phase Pending",
+                }
+            )
     warn = [e for e in _events(core, ns, limit=40) if e["type"] == "Warning"]
     for e in warn[:5]:
         findings.append({"severity": "info", "issue": f"warning event {e['reason']}", "evidence": e["message"]})
@@ -256,12 +319,26 @@ def diagnose_deployment(args: DeployArgs) -> dict[str, Any]:
             ep = core.read_namespaced_endpoints(s.metadata.name, ns)
             svc_ready = sum(len(x.addresses or []) for x in (ep.subsets or []))
             if svc_ready == 0:
-                findings.append({"severity": "high", "issue": f"service {s.metadata.name} has 0 ready endpoints (API unreachable)", "evidence": "endpoints empty"})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "issue": f"service {s.metadata.name} has 0 ready endpoints (API unreachable)",
+                        "evidence": "endpoints empty",
+                    }
+                )
     except Exception:  # noqa: BLE001
         pass
     healthy = ready >= desired > 0 and not any(f["severity"] == "high" for f in findings)
-    return {"deployment": args.deployment, "namespace": ns, "desired": desired, "ready": ready, "healthy": healthy,
-            "pods": pods, "findings": findings, "focus_pod_log_tail": log_tail}
+    return {
+        "deployment": args.deployment,
+        "namespace": ns,
+        "desired": desired,
+        "ready": ready,
+        "healthy": healthy,
+        "pods": pods,
+        "findings": findings,
+        "focus_pod_log_tail": log_tail,
+    }
 
 
 def restart_deployment(args: RestartArgs) -> dict[str, Any]:
@@ -274,11 +351,42 @@ def restart_deployment(args: RestartArgs) -> dict[str, Any]:
 
 
 TOOLS = [
-    Tool("list_k8s_workloads", "List application Deployments and Pods (status, restarts, images) in the approved namespace.", NsArgs, list_workloads, "kubernetes"),
-    Tool("get_pod_details", "Pod status, container states, probes, recent events and log tail (redacted).", PodArgs, get_pod_details, "kubernetes"),
+    Tool(
+        "list_k8s_workloads",
+        "List application Deployments and Pods (status, restarts, images) in the approved namespace.",
+        NsArgs,
+        list_workloads,
+        "kubernetes",
+    ),
+    Tool(
+        "get_pod_details",
+        "Pod status, container states, probes, recent events and log tail (redacted).",
+        PodArgs,
+        get_pod_details,
+        "kubernetes",
+    ),
     Tool("list_k8s_services", "Inspect Services and their ready endpoints.", NsArgs, list_services, "kubernetes"),
     Tool("find_unhealthy_pods", "Identify unhealthy pods, restart events and warning events.", NsArgs, find_unhealthy_pods, "kubernetes"),
-    Tool("get_deployed_version", "Report the deployed application version (image tag, version label, ConfigMap model/dataset info).", DeployArgs, get_deployed_version, "kubernetes"),
-    Tool("diagnose_deployment", "Evidence-based diagnosis of why the prediction API is unavailable/unhealthy (pods, probes, events, logs, endpoints).", DeployArgs, diagnose_deployment, "kubernetes"),
-    Tool("restart_deployment", "Rollout-restart a Deployment in the approved namespace.", RestartArgs, restart_deployment, "kubernetes", writes=True),
+    Tool(
+        "get_deployed_version",
+        "Report the deployed application version (image tag, version label, ConfigMap model/dataset info).",
+        DeployArgs,
+        get_deployed_version,
+        "kubernetes",
+    ),
+    Tool(
+        "diagnose_deployment",
+        "Evidence-based diagnosis of why the prediction API is unavailable/unhealthy (pods, probes, events, logs, endpoints).",
+        DeployArgs,
+        diagnose_deployment,
+        "kubernetes",
+    ),
+    Tool(
+        "restart_deployment",
+        "Rollout-restart a Deployment in the approved namespace.",
+        RestartArgs,
+        restart_deployment,
+        "kubernetes",
+        writes=True,
+    ),
 ]

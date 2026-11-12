@@ -8,13 +8,14 @@ The registry is the single choke point where we enforce:
   * policy denials (namespace, ...) -> status "denied"
   * structured logs (tool, status, duration, request id), secrets redacted
 """
+
 from __future__ import annotations
 
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Callable
 
 from pydantic import BaseModel, ValidationError
@@ -131,5 +132,5 @@ def build_registry() -> ToolRegistry:
     reg = ToolRegistry()
     for module in (dvc_tools, mlflow_tools, airflow_tools, kubernetes_tools):
         for tool in module.TOOLS:
-            reg.register(tool)
+            reg.register(replace(tool))  # fresh copy: registries never share mutable Tool objects
     return reg

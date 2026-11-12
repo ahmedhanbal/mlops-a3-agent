@@ -1,4 +1,5 @@
 """Structured inputs/outputs shared by the tools, the orchestrator and the HTTP interface."""
+
 from __future__ import annotations
 
 from typing import Any, Literal

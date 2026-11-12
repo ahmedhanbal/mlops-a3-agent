@@ -3,6 +3,7 @@
 Only an explicit allow-list of git/dvc sub-commands can be executed (no shell, no free-form args).
 Dataset provenance is *read from recorded MLflow tags*, never inferred by the LLM.
 """
+
 from __future__ import annotations
 
 import json
@@ -136,7 +137,7 @@ def list_datasets(_: NoArgs) -> dict[str, Any]:
     root = get_settings().repo_root
     found = []
     for f in sorted(root.rglob("*.dvc")):
-        if ".dvc" in f.relative_to(root).parts[:-1] or "node_modules" in f.parts:
+        if not f.is_file() or ".dvc" in f.relative_to(root).parts[:-1] or "node_modules" in f.parts:
             continue
         rel = str(f.relative_to(root))
         try:
@@ -201,7 +202,8 @@ def detect_data_changes(args: DatasetArg) -> dict[str, Any]:
         "dataset": args.dataset,
         "changed": changed,
         "dvc_status": status,
-        "interpretation": "workspace data differs from the version recorded in git" if changed
+        "interpretation": "workspace data differs from the version recorded in git"
+        if changed
         else "workspace data matches the version recorded in git",
     }
 
@@ -215,18 +217,33 @@ def explain_reproduce(args: ReproduceArgs) -> dict[str, Any]:
         f"dvc status {dvc_file}                          # should report 'Data and pipelines are up to date'",
         f"git checkout HEAD -- {dvc_file} && dvc checkout   # return to the latest dataset afterwards",
     ]
-    return {"dataset": args.dataset, "target": info, "steps": steps, "note": "This tool only explains; use checkout_dataset_version (needs confirmation) to execute."}
+    return {
+        "dataset": args.dataset,
+        "target": info,
+        "steps": steps,
+        "note": "This tool only explains; use checkout_dataset_version (needs confirmation) to execute.",
+    }
 
 
 def checkout_dataset_version(args: CheckoutArgs) -> dict[str, Any]:
-    """STATE-CHANGING: rewrites the workspace dataset to an older version."""
+    """STATE-CHANGING: rewrites the workspace dataset to an older version.
+
+    Safe by design: refuses to run if the workspace data has unsaved changes (never uses --force), and rolls the
+    pointer file back if `dvc checkout` fails.
+    """
     dvc_file = _dvc_file_for(args.dataset)
     info = _dataset_at_rev(dvc_file, args.rev)
+    pre = run_command(["dvc", "status", "--json", dvc_file])
+    if pre.stdout.strip() not in ("", "{}"):
+        raise RuntimeError(
+            "workspace dataset has unsaved changes relative to its DVC pointer; refusing to overwrite it (no --force is ever used)"
+        )
     g = run_command(["git", "checkout", info["git_commit"], "--", dvc_file])
     if g.returncode != 0:
         raise RuntimeError(g.stderr.strip()[:300])
     d = run_command(["dvc", "checkout", dvc_file])
     if d.returncode != 0:
+        run_command(["git", "checkout", "HEAD", "--", dvc_file])  # roll back the pointer
         raise RuntimeError(d.stderr.strip()[:300])
     st = run_command(["dvc", "status", "--json", dvc_file])
     return {"checked_out": info, "workspace_matches_version": (st.stdout.strip() in ("", "{}"))}
@@ -288,10 +305,47 @@ def get_experiment_dataset(args: ExperimentDatasetArgs) -> dict[str, Any]:
 
 TOOLS = [
     Tool("list_dvc_datasets", "List datasets tracked by DVC (path, md5, size) and configured DVC remotes.", NoArgs, list_datasets, "dvc"),
-    Tool("get_dataset_version", "Get the current dataset version label, DVC md5 and Git commit for a tracked dataset.", DatasetArg, get_dataset_version, "dvc"),
-    Tool("compare_dataset_versions", "Compare two dataset versions (git revisions/data tags) using recorded md5/size and `dvc diff`.", CompareArgs, compare_dataset_versions, "dvc"),
-    Tool("detect_data_changes", "Detect whether tracked data in the workspace changed relative to its recorded DVC version (`dvc status`).", DatasetArg, detect_data_changes, "dvc"),
-    Tool("explain_dataset_reproduction", "Explain, step by step, how to reproduce a previous dataset version.", ReproduceArgs, explain_reproduce, "dvc"),
-    Tool("get_experiment_dataset", "Return the dataset version / md5 / git commit RECORDED on an MLflow experiment or run (provenance). Use for 'which dataset version was used for experiment N / run X'.", ExperimentDatasetArgs, get_experiment_dataset, "dvc"),
-    Tool("checkout_dataset_version", "Check out an older dataset version into the workspace (git + dvc checkout).", CheckoutArgs, checkout_dataset_version, "dvc", writes=True),
+    Tool(
+        "get_dataset_version",
+        "Get the current dataset version label, DVC md5 and Git commit for a tracked dataset.",
+        DatasetArg,
+        get_dataset_version,
+        "dvc",
+    ),
+    Tool(
+        "compare_dataset_versions",
+        "Compare two dataset versions (git revisions/data tags) using recorded md5/size and `dvc diff`.",
+        CompareArgs,
+        compare_dataset_versions,
+        "dvc",
+    ),
+    Tool(
+        "detect_data_changes",
+        "Detect whether tracked data in the workspace changed relative to its recorded DVC version (`dvc status`).",
+        DatasetArg,
+        detect_data_changes,
+        "dvc",
+    ),
+    Tool(
+        "explain_dataset_reproduction",
+        "Explain, step by step, how to reproduce a previous dataset version.",
+        ReproduceArgs,
+        explain_reproduce,
+        "dvc",
+    ),
+    Tool(
+        "get_experiment_dataset",
+        "Return the dataset version / md5 / git commit RECORDED on an MLflow experiment or run (provenance). Use for 'which dataset version was used for experiment N / run X'.",
+        ExperimentDatasetArgs,
+        get_experiment_dataset,
+        "dvc",
+    ),
+    Tool(
+        "checkout_dataset_version",
+        "Check out an older dataset version into the workspace (git + dvc checkout).",
+        CheckoutArgs,
+        checkout_dataset_version,
+        "dvc",
+        writes=True,
+    ),
 ]

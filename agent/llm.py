@@ -4,6 +4,7 @@
 * RuleBasedLLM  - offline deterministic planner (same interface). Used when no API key is configured, as the
                   fallback if the LLM API fails, and in tests/CI. It selects tools from the request text.
 """
+
 from __future__ import annotations
 
 import json
@@ -80,7 +81,12 @@ def plan(query: str) -> list[list[tuple[str, Any]]]:
 
     if mandatory:
         p1.append(("find_best_run", {"metric": _metric(q)}))
-        p2.append(("get_experiment_dataset", lambda res: {"run_id": res["find_best_run"]["best"]["run_id"]} if "find_best_run" in res else {"experiment_id": "1"}))
+        p2.append(
+            (
+                "get_experiment_dataset",
+                lambda res: {"run_id": res["find_best_run"]["best"]["run_id"]} if "find_best_run" in res else {"experiment_id": "1"},
+            )
+        )
         p2 += [("diagnose_deployment", {}), ("get_deployed_version", {}), ("get_dag_run_status", {})]
         return [p1, p2]
 
@@ -88,14 +94,18 @@ def plan(query: str) -> list[list[tuple[str, Any]]]:
     best_then_data = wants_data and has("best", "top") and not (exp or run)
     if best_then_data:  # dependent calls: MLflow picks the run, DVC provenance is read for that run
         p1.append(("find_best_run", {"metric": _metric(q)}))
-        p2.append(("get_experiment_dataset", lambda res: {"run_id": res["find_best_run"]["best"]["run_id"]} if "find_best_run" in res else None))
+        p2.append(
+            ("get_experiment_dataset", lambda res: {"run_id": res["find_best_run"]["best"]["run_id"]} if "find_best_run" in res else None)
+        )
     elif wants_data or exp or run:
         if exp or run:
             p1.append(("get_experiment_dataset", {"experiment_id": exp.group(1)} if exp else {"run_id": run.group(0)}))
         elif has("reproduce"):
             p1.append(("explain_dataset_reproduction", {"rev": tags[0] if tags else "data-v1"}))
         elif has("compare") or len(tags) >= 2:
-            p1.append(("compare_dataset_versions", {"rev_a": tags[0] if tags else "data-v1", "rev_b": tags[1] if len(tags) > 1 else "HEAD"}))
+            p1.append(
+                ("compare_dataset_versions", {"rev_a": tags[0] if tags else "data-v1", "rev_b": tags[1] if len(tags) > 1 else "HEAD"})
+            )
         elif has("changed", "change", "modified", "drift", "tamper"):
             p1.append(("detect_data_changes", {}))
         elif has("list", "which datasets", "tracked"):
@@ -156,8 +166,10 @@ class RuleBasedLLM:
         phases = plan(query)
         done = sum(1 for m in messages if m["role"] == "assistant")
         if not phases:
-            return LLMReply(text="I can inspect DVC datasets, MLflow experiments, Airflow pipelines and the Kubernetes deployment. "
-                                 "Ask e.g. 'Which dataset version was used for experiment 1?' or 'Why is my prediction API unavailable?'")
+            return LLMReply(
+                text="I can inspect DVC datasets, MLflow experiments, Airflow pipelines and the Kubernetes deployment. "
+                "Ask e.g. 'Which dataset version was used for experiment 1?' or 'Why is my prediction API unavailable?'"
+            )
         if done >= len(phases):
             return LLMReply()
         calls = []

@@ -4,6 +4,7 @@ Configuration comes from the ConfigMap (env vars):
   APP_VERSION, MODEL_PATH, MODEL_RUN_ID, DATASET_VERSION, LOG_LEVEL
 Probes: /health (liveness: process is up)  /ready (readiness: model loaded and usable)
 """
+
 from __future__ import annotations
 
 import logging

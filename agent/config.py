@@ -1,4 +1,5 @@
 """Runtime configuration. Everything comes from environment variables (no secrets in code)."""
+
 from __future__ import annotations
 
 import os

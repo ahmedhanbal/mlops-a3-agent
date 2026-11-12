@@ -1,4 +1,5 @@
 """Create the demo dataset versions (v1, v2). Run before `dvc add`. Deterministic."""
+
 from __future__ import annotations
 
 import argparse

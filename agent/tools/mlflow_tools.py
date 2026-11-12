@@ -1,4 +1,5 @@
 """Task 2 - MLflow experiment intelligence tools (MlflowClient only, no UI scraping)."""
+
 from __future__ import annotations
 
 import time
@@ -88,8 +89,7 @@ def list_experiments(_: NoArgs) -> dict[str, Any]:
     return {
         "count": len(exps),
         "experiments": [
-            {"experiment_id": e.experiment_id, "name": e.name, "lifecycle_stage": e.lifecycle_stage,
-             "created": _iso(e.creation_time)}
+            {"experiment_id": e.experiment_id, "name": e.name, "lifecycle_stage": e.lifecycle_stage, "created": _iso(e.creation_time)}
             for e in exps
         ],
     }
@@ -143,7 +143,9 @@ def best_run(args: BestRunArgs) -> dict[str, Any]:
     client = _client()
     ids = _exp_ids(client, args.experiment_name)
     runs = client.search_runs(
-        ids, filter_string="attributes.status = 'FINISHED'", max_results=args.recent_n,
+        ids,
+        filter_string="attributes.status = 'FINISHED'",
+        max_results=args.recent_n,
         order_by=["attributes.start_time DESC"],
     )
     scored = [r for r in runs if args.metric in r.data.metrics]
@@ -187,11 +189,15 @@ def compare_experiments(args: CompareExperimentsArgs) -> dict[str, Any]:
             continue
         runs = client.search_runs([exp.experiment_id], max_results=200)
         vals = [r.data.metrics[args.metric] for r in runs if args.metric in r.data.metrics]
-        out.append({
-            "experiment": name, "runs": len(runs), "runs_with_metric": len(vals),
-            f"best_{args.metric}": round(max(vals), 5) if vals else None,
-            f"mean_{args.metric}": round(sum(vals) / len(vals), 5) if vals else None,
-        })
+        out.append(
+            {
+                "experiment": name,
+                "runs": len(runs),
+                "runs_with_metric": len(vals),
+                f"best_{args.metric}": round(max(vals), 5) if vals else None,
+                f"mean_{args.metric}": round(sum(vals) / len(vals), 5) if vals else None,
+            }
+        )
     return {"metric": args.metric, "experiments": out}
 
 
@@ -203,25 +209,61 @@ def get_model_versions(args: ModelVersionsArgs) -> dict[str, Any]:
     result = []
     for m in models:
         versions = client.search_model_versions(f"name = '{m.name.replace(chr(39), '')}'")
-        result.append({
-            "name": m.name,
-            "aliases": dict(getattr(m, "aliases", {}) or {}),
-            "versions": [
-                {"version": v.version, "run_id": v.run_id, "status": v.status, "created": _iso(v.creation_timestamp),
-                 "aliases": list(getattr(v, "aliases", []) or [])}
-                for v in sorted(versions, key=lambda v: int(v.version), reverse=True)[:10]
-            ],
-        })
-    return {"registered_models": result, "count": len(result),
-            "note": None if result else "registry reachable but no registered models match"}
+        result.append(
+            {
+                "name": m.name,
+                "aliases": dict(getattr(m, "aliases", {}) or {}),
+                "versions": [
+                    {
+                        "version": v.version,
+                        "run_id": v.run_id,
+                        "status": v.status,
+                        "created": _iso(v.creation_timestamp),
+                        "aliases": list(getattr(v, "aliases", []) or []),
+                    }
+                    for v in sorted(versions, key=lambda v: int(v.version), reverse=True)[:10]
+                ],
+            }
+        )
+    return {
+        "registered_models": result,
+        "count": len(result),
+        "note": None if result else "registry reachable but no registered models match",
+    }
 
 
 TOOLS = [
     Tool("list_mlflow_experiments", "List MLflow experiments.", NoArgs, list_experiments, "mlflow"),
-    Tool("list_mlflow_runs", "List recent MLflow runs with metrics, params and recorded dataset version.", ListRunsArgs, list_runs, "mlflow"),
+    Tool(
+        "list_mlflow_runs", "List recent MLflow runs with metrics, params and recorded dataset version.", ListRunsArgs, list_runs, "mlflow"
+    ),
     Tool("get_mlflow_run_details", "Get full metrics, params, tags and artifacts for one run.", RunArgs, get_run_details, "mlflow"),
-    Tool("find_best_run", "Identify the best recent run by a metric (default f1) with readiness caveats. Does NOT declare a model production-ready.", BestRunArgs, best_run, "mlflow"),
-    Tool("compare_mlflow_runs", "Compare several runs (explicit ids, or last N) on a metric; shows which params differ.", CompareRunsArgs, compare_runs, "mlflow"),
-    Tool("compare_mlflow_experiments", "Compare two or more experiments on a metric (best/mean).", CompareExperimentsArgs, compare_experiments, "mlflow"),
-    Tool("get_model_versions", "Get MLflow model-registry versions and aliases (if the registry has models).", ModelVersionsArgs, get_model_versions, "mlflow"),
+    Tool(
+        "find_best_run",
+        "Identify the best recent run by a metric (default f1) with readiness caveats. Does NOT declare a model production-ready.",
+        BestRunArgs,
+        best_run,
+        "mlflow",
+    ),
+    Tool(
+        "compare_mlflow_runs",
+        "Compare several runs (explicit ids, or last N) on a metric; shows which params differ.",
+        CompareRunsArgs,
+        compare_runs,
+        "mlflow",
+    ),
+    Tool(
+        "compare_mlflow_experiments",
+        "Compare two or more experiments on a metric (best/mean).",
+        CompareExperimentsArgs,
+        compare_experiments,
+        "mlflow",
+    ),
+    Tool(
+        "get_model_versions",
+        "Get MLflow model-registry versions and aliases (if the registry has models).",
+        ModelVersionsArgs,
+        get_model_versions,
+        "mlflow",
+    ),
 ]

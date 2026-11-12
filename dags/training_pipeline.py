@@ -6,6 +6,7 @@ Reliability design
   * train / evaluate are retried (transient failures: IO, tracking server hiccup);
   * the quality gate is the only place a model is registered and given the `candidate` alias.
 """
+
 from __future__ import annotations
 
 import logging
@@ -61,9 +62,12 @@ def training_pipeline():
     @task
     def evaluate_and_log(trained, params=None, run_id=None):
         ev = ps.evaluate_and_log(
-            trained["model_path"], trained["test"],
+            trained["model_path"],
+            trained["test"],
             {"n_estimators": params["n_estimators"], "max_depth": params["max_depth"], "airflow_run_id": run_id},
-            trained["provenance"], TRACKING_URI, run_name=f"airflow-{run_id}"[:100],
+            trained["provenance"],
+            TRACKING_URI,
+            run_name=f"airflow-{run_id}"[:100],
         )
         log.info("evaluation: %s", ev["metrics"])
         return ev["run_id"]

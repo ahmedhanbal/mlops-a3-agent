@@ -1,4 +1,5 @@
 """Task 3 - Apache Airflow 3 workflow tools (REST API v2 with JWT authentication)."""
+
 from __future__ import annotations
 
 import re
@@ -35,9 +36,11 @@ class AirflowClient:
         token = AirflowClient._token or self._authenticate()
         for attempt in (1, 2):
             resp = requests.request(
-                method, f"{self.base}/api/v2{path}",
+                method,
+                f"{self.base}/api/v2{path}",
                 headers={"Authorization": f"Bearer {token}", **(extra_headers or {})},
-                timeout=self.timeout, **kw,
+                timeout=self.timeout,
+                **kw,
             )
             if resp.status_code == 401 and attempt == 1:  # expired token -> refresh once
                 token = self._authenticate()
@@ -87,8 +90,10 @@ def list_dags(_: NoArgs) -> dict[str, Any]:
     return {
         "count": data.get("total_entries", len(data.get("dags", []))),
         "approved_for_triggering": list(get_settings().approved_dags),
-        "dags": [{"dag_id": d["dag_id"], "paused": d.get("is_paused"), "tags": [t.get("name") for t in d.get("tags", [])]}
-                 for d in data.get("dags", [])],
+        "dags": [
+            {"dag_id": d["dag_id"], "paused": d.get("is_paused"), "tags": [t.get("name") for t in d.get("tags", [])]}
+            for d in data.get("dags", [])
+        ],
     }
 
 
@@ -125,11 +130,17 @@ def get_failed_tasks(args: FailedTasksArgs) -> dict[str, Any]:
         run_id = failed[0]["dag_run_id"]
     run_id = _check_id(run_id, "run_id")
     tis = client.request("GET", f"/dags/{dag}/dagRuns/{run_id}/taskInstances").get("task_instances", [])
-    states = [{"task_id": t["task_id"], "state": t.get("state"), "try_number": t.get("try_number"),
-               "duration_s": t.get("duration")} for t in tis]
+    states = [
+        {"task_id": t["task_id"], "state": t.get("state"), "try_number": t.get("try_number"), "duration_s": t.get("duration")} for t in tis
+    ]
     bad = [t for t in states if t["state"] in ("failed", "upstream_failed")]
-    return {"dag_id": dag, "run_id": run_id, "task_states": states, "failed_tasks": bad,
-            "root_cause_candidates": [t["task_id"] for t in bad if t["state"] == "failed"]}
+    return {
+        "dag_id": dag,
+        "run_id": run_id,
+        "task_states": states,
+        "failed_tasks": bad,
+        "root_cause_candidates": [t["task_id"] for t in bad if t["state"] == "failed"],
+    }
 
 
 def get_task_diagnostics(args: TaskDiagArgs) -> dict[str, Any]:
@@ -140,25 +151,52 @@ def get_task_diagnostics(args: TaskDiagArgs) -> dict[str, Any]:
     log_error = None
     try:  # logs are best-effort diagnostics: JSON only when Accept: application/json is sent
         logs = client.request(
-            "GET", f"/dags/{dag}/dagRuns/{run}/taskInstances/{task}/logs/{args.try_number}",
-            extra_headers={"Accept": "application/json"}, params={"map_index": -1},
+            "GET",
+            f"/dags/{dag}/dagRuns/{run}/taskInstances/{task}/logs/{args.try_number}",
+            extra_headers={"Accept": "application/json"},
+            params={"map_index": -1},
         )
         for item in logs.get("content", []):
             log_lines.append(item if isinstance(item, str) else str(item.get("event", item)))
     except Exception as exc:  # noqa: BLE001
         log_error = f"logs unavailable: {type(exc).__name__}"
-    tail = [redact(line) for line in log_lines[-args.tail_lines:]]
+    tail = [redact(line) for line in log_lines[-args.tail_lines :]]
     return {
-        "task_id": task, "state": ti.get("state"), "try_number": ti.get("try_number"),
-        "max_tries": ti.get("max_tries"), "start_date": ti.get("start_date"), "end_date": ti.get("end_date"),
-        "duration_s": ti.get("duration"), "log_tail": tail, "log_error": log_error,
+        "task_id": task,
+        "state": ti.get("state"),
+        "try_number": ti.get("try_number"),
+        "max_tries": ti.get("max_tries"),
+        "start_date": ti.get("start_date"),
+        "end_date": ti.get("end_date"),
+        "duration_s": ti.get("duration"),
+        "log_tail": tail,
+        "log_error": log_error,
     }
 
 
 TOOLS = [
     Tool("list_airflow_dags", "List Airflow DAGs and which are approved for triggering.", NoArgs, list_dags, "airflow"),
     Tool("get_dag_run_status", "Get recent DAG run states for a DAG (default training_pipeline).", DagRunsArgs, get_dag_runs, "airflow"),
-    Tool("trigger_training_dag", "Trigger the approved training DAG with optional hyper-parameters.", TriggerArgs, trigger_training_dag, "airflow", writes=True),
-    Tool("find_failed_tasks", "Identify failed / upstream_failed tasks of a DAG run (default: latest failed run).", FailedTasksArgs, get_failed_tasks, "airflow"),
-    Tool("get_task_diagnostics", "Task-instance details and log tail (secrets redacted) for failure diagnosis.", TaskDiagArgs, get_task_diagnostics, "airflow"),
+    Tool(
+        "trigger_training_dag",
+        "Trigger the approved training DAG with optional hyper-parameters.",
+        TriggerArgs,
+        trigger_training_dag,
+        "airflow",
+        writes=True,
+    ),
+    Tool(
+        "find_failed_tasks",
+        "Identify failed / upstream_failed tasks of a DAG run (default: latest failed run).",
+        FailedTasksArgs,
+        get_failed_tasks,
+        "airflow",
+    ),
+    Tool(
+        "get_task_diagnostics",
+        "Task-instance details and log tail (secrets redacted) for failure diagnosis.",
+        TaskDiagArgs,
+        get_task_diagnostics,
+        "airflow",
+    ),
 ]

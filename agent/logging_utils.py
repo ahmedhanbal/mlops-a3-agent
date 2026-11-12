@@ -1,4 +1,5 @@
 """Structured JSON logging with secret redaction."""
+
 from __future__ import annotations
 
 import json

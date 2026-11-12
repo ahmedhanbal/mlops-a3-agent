@@ -1,4 +1,5 @@
 """CLI runner of the full pipeline (same functions the Airflow DAG calls)."""
+
 from __future__ import annotations
 
 import argparse
@@ -11,14 +12,29 @@ from pathlib import Path
 from training import pipeline_steps as ps
 
 
-def run(dataset: str, n_estimators: int, max_depth: int, tracking_uri: str, gate: float,
-        experiment: str = ps.EXPERIMENT, run_name: str | None = None, export: bool = True) -> dict:
+def run(
+    dataset: str,
+    n_estimators: int,
+    max_depth: int,
+    tracking_uri: str,
+    gate: float,
+    experiment: str = ps.EXPERIMENT,
+    run_name: str | None = None,
+    export: bool = True,
+) -> dict:
     work = tempfile.mkdtemp(prefix="train-")
     v = ps.validate_dataset(dataset)
     splits = ps.preprocess(dataset, work)
     model_path = ps.train_model(splits["train"], work, n_estimators, max_depth)
-    ev = ps.evaluate_and_log(model_path, splits["test"], {"n_estimators": n_estimators, "max_depth": max_depth},
-                             v["provenance"], tracking_uri, experiment, run_name)
+    ev = ps.evaluate_and_log(
+        model_path,
+        splits["test"],
+        {"n_estimators": n_estimators, "max_depth": max_depth},
+        v["provenance"],
+        tracking_uri,
+        experiment,
+        run_name,
+    )
     try:
         g = ps.quality_gate(ev["run_id"], gate, tracking_uri)
     finally:

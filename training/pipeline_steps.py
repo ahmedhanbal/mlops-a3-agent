@@ -3,6 +3,7 @@
 Stages (Figure 2): validate -> preprocess -> train -> evaluate_and_log -> quality_gate.
 Each stage is a plain function so it can be tested without Airflow.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -112,10 +113,12 @@ def preprocess(dataset: str, work_dir: str, seed: int = 42) -> dict[str, str]:
 # 3) train ---------------------------------------------------------------------------------
 def train_model(train_csv: str, work_dir: str, n_estimators: int = 200, max_depth: int = 8, seed: int = 42) -> str:
     df = pd.read_csv(train_csv)
-    model = Pipeline([
-        ("scale", StandardScaler()),
-        ("clf", RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=seed, n_jobs=1)),
-    ])
+    model = Pipeline(
+        [
+            ("scale", StandardScaler()),
+            ("clf", RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=seed, n_jobs=1)),
+        ]
+    )
     model.fit(df.drop(columns=[TARGET]), df[TARGET])
     path = Path(work_dir) / "model.joblib"
     joblib.dump(model, path)
@@ -124,8 +127,15 @@ def train_model(train_csv: str, work_dir: str, n_estimators: int = 200, max_dept
 
 
 # 4) evaluate + log to MLflow ---------------------------------------------------------------
-def evaluate_and_log(model_path: str, test_csv: str, params: dict[str, Any], provenance: dict[str, Any],
-                     tracking_uri: str, experiment: str = EXPERIMENT, run_name: str | None = None) -> dict[str, Any]:
+def evaluate_and_log(
+    model_path: str,
+    test_csv: str,
+    params: dict[str, Any],
+    provenance: dict[str, Any],
+    tracking_uri: str,
+    experiment: str = EXPERIMENT,
+    run_name: str | None = None,
+) -> dict[str, Any]:
     import mlflow
 
     mlflow.set_tracking_uri(tracking_uri)
@@ -135,8 +145,10 @@ def evaluate_and_log(model_path: str, test_csv: str, params: dict[str, Any], pro
     x, y = test.drop(columns=[TARGET]), test[TARGET]
     pred = model.predict(x)
     metrics = {
-        "f1": f1_score(y, pred), "accuracy": accuracy_score(y, pred),
-        "precision": precision_score(y, pred), "recall": recall_score(y, pred),
+        "f1": f1_score(y, pred),
+        "accuracy": accuracy_score(y, pred),
+        "precision": precision_score(y, pred),
+        "recall": recall_score(y, pred),
     }
     with mlflow.start_run(run_name=run_name) as run:
         mlflow.log_params(params)
@@ -145,6 +157,7 @@ def evaluate_and_log(model_path: str, test_csv: str, params: dict[str, Any], pro
         mlflow.set_tag("quality_gate", "pending")
         try:
             import mlflow.sklearn
+
             mlflow.sklearn.log_model(model, artifact_path="model")
         except Exception:  # noqa: BLE001 - fall back to raw artifact so the run still carries the model
             mlflow.log_artifact(model_path)
