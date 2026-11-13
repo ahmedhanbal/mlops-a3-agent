@@ -137,6 +137,12 @@ def correlate(
             rep.facts,
             f"MLflow: compared {len(d['runs'])} runs on {d['metric']}; leader {_short(d['leader_by_metric'])}; params that differ: {d['params_that_differ'] or 'none'}.",
         )
+        for row in d["runs"]:
+            if row.get("quality_gate") == "failed":
+                rep.add(
+                    rep.facts,
+                    f"MLflow: run {_short(row['run_id'])} ({row.get('run_name')}) FAILED the quality gate ({d['metric']}={row['metrics'].get(d['metric'])}) and must not be promoted.",
+                )
         rep.add(rep.uncertainties, "A higher metric on one split does not by itself make a model production-ready.")
     if r := ok.get("list_mlflow_runs"):
         rep.add(rep.facts, f"MLflow: {r.data['count']} runs listed.")
