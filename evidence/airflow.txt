@@ -1,0 +1,2 @@
+$ airflow dags list-runs training_pipeline
+./scripts/collect_evidence.sh: line 20: airflow: command not found

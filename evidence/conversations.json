@@ -1,0 +1,201 @@
+[
+  {
+    "scenario": "1. Dataset provenance",
+    "query": "Which dataset version was used for experiment 1?",
+    "response": {
+      "request_id": "932a88f7dd36",
+      "answer": "**Known facts (from tool evidence)**\n- DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.\n- DVC: inspected runs span dataset versions ['data-v1', 'data-v2'].",
+      "known_facts": [
+        "DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.",
+        "DVC: inspected runs span dataset versions ['data-v1', 'data-v2']."
+      ],
+      "uncertainties": [],
+      "recommended_actions": [],
+      "evidence": [
+        {
+          "tool": "get_experiment_dataset",
+          "status": "ok",
+          "request_id": "932a88f7dd36",
+          "duration_ms": 667.59,
+          "summary": "ok"
+        }
+      ],
+      "tools_used": [
+        "get_experiment_dataset"
+      ],
+      "pending_confirmation": []
+    }
+  },
+  {
+    "scenario": "2. Model selection",
+    "query": "Compare the last five training runs and recommend the best candidate based on F1 score.",
+    "response": {
+      "request_id": "3279882c0f43",
+      "answer": "**Known facts (from tool evidence)**\n- MLflow: compared 5 runs on f1; leader 485ce030; params that differ: ['airflow_run_id', 'max_depth', 'n_estimators'].\n- MLflow: run 485ce030 (airflow-manual__2026-11-09T08:15:00.031313+00:00) FAILED the quality gate (f1=0.97561) and must not be promoted.\n- MLflow: run 27210d8a (injected-weak-model) FAILED the quality gate (f1=0.94737) and must not be promoted.\n- MLflow: run be8740ae (rf-v2-strict-gate) FAILED the quality gate (f1=0.94737) and must not be promoted.\n\n**Uncertainties**\n- A higher metric on one split does not by itself make a model production-ready.",
+      "known_facts": [
+        "MLflow: compared 5 runs on f1; leader 485ce030; params that differ: ['airflow_run_id', 'max_depth', 'n_estimators'].",
+        "MLflow: run 485ce030 (airflow-manual__2026-11-09T08:15:00.031313+00:00) FAILED the quality gate (f1=0.97561) and must not be promoted.",
+        "MLflow: run 27210d8a (injected-weak-model) FAILED the quality gate (f1=0.94737) and must not be promoted.",
+        "MLflow: run be8740ae (rf-v2-strict-gate) FAILED the quality gate (f1=0.94737) and must not be promoted."
+      ],
+      "uncertainties": [
+        "A higher metric on one split does not by itself make a model production-ready."
+      ],
+      "recommended_actions": [],
+      "evidence": [
+        {
+          "tool": "compare_mlflow_runs",
+          "status": "ok",
+          "request_id": "3279882c0f43",
+          "duration_ms": 10.91,
+          "summary": "ok"
+        }
+      ],
+      "tools_used": [
+        "compare_mlflow_runs"
+      ],
+      "pending_confirmation": []
+    }
+  },
+  {
+    "scenario": "3. Pipeline execution",
+    "query": "Show the status of the latest training pipeline runs in Airflow.",
+    "response": {
+      "request_id": "32cdc4a448a2",
+      "answer": "**Known facts (from tool evidence)**\n- MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).\n- Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED.\n\n**Uncertainties**\n- MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n\n**Recommended actions**\n- `trigger_training_dag` changes state and was NOT executed. Re-submit with confirm=true to authorise it.\n- Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it.",
+      "known_facts": [
+        "MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).",
+        "Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED."
+      ],
+      "uncertainties": [
+        "MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
+        "MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate",
+        "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)"
+      ],
+      "recommended_actions": [
+        "`trigger_training_dag` changes state and was NOT executed. Re-submit with confirm=true to authorise it.",
+        "Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it."
+      ],
+      "evidence": [
+        {
+          "tool": "find_best_run",
+          "status": "ok",
+          "request_id": "32cdc4a448a2",
+          "duration_ms": 9.51,
+          "summary": "ok (best run 485ce030)"
+        },
+        {
+          "tool": "trigger_training_dag",
+          "status": "confirmation_required",
+          "request_id": "32cdc4a448a2",
+          "duration_ms": 0.01,
+          "summary": "confirmation_required: 'trigger_training_dag' changes system state. Re-submit the request with confirm=true to authorise it."
+        }
+      ],
+      "tools_used": [
+        "find_best_run",
+        "trigger_training_dag"
+      ],
+      "pending_confirmation": [
+        "trigger_training_dag"
+      ]
+    }
+  },
+  {
+    "scenario": "4. Deployment diagnosis",
+    "query": "Why is my prediction API unavailable?",
+    "response": {
+      "request_id": "ea80f4a7b3ec",
+      "answer": "**Known facts (from tool evidence)**\n- Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.",
+      "known_facts": [
+        "Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True."
+      ],
+      "uncertainties": [],
+      "recommended_actions": [],
+      "evidence": [
+        {
+          "tool": "diagnose_deployment",
+          "status": "ok",
+          "request_id": "ea80f4a7b3ec",
+          "duration_ms": 0.41,
+          "summary": "ok (healthy=True)"
+        }
+      ],
+      "tools_used": [
+        "diagnose_deployment"
+      ],
+      "pending_confirmation": []
+    }
+  },
+  {
+    "scenario": "5. Multi-tool reasoning",
+    "query": "Find the best recent model, identify the dataset version used to train it, check the deployment status, and explain whether retraining is necessary.",
+    "response": {
+      "request_id": "8ec4542bf692",
+      "answer": "**Known facts (from tool evidence)**\n- MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).\n- DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.\n- Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.\n- Kubernetes: deployed image(s) ['mlops-inference:1.0.0']; app version 1.0.0; model run bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; dataset data-v2.\n- Deployed model run (bbbbbbbb) differs from the best candidate (485ce030).\n- Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED.\n\n**Uncertainties**\n- Airflow evidence unavailable (get_dag_run_status: error - ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8080): Max retries exceeded with url: /auth/token (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8080): Failed to establish a new connection: [Errno 111] Connection refused\"))). Nothing is claimed about it.\n- MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n\n**Recommended actions**\n- Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain).\n- Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it.",
+      "known_facts": [
+        "MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).",
+        "DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.",
+        "Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.",
+        "Kubernetes: deployed image(s) ['mlops-inference:1.0.0']; app version 1.0.0; model run bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; dataset data-v2.",
+        "Deployed model run (bbbbbbbb) differs from the best candidate (485ce030).",
+        "Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED."
+      ],
+      "uncertainties": [
+        "Airflow evidence unavailable (get_dag_run_status: error - ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8080): Max retries exceeded with url: /auth/token (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8080): Failed to establish a new connection: [Errno 111] Connection refused\"))). Nothing is claimed about it.",
+        "MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
+        "MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate",
+        "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)"
+      ],
+      "recommended_actions": [
+        "Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain).",
+        "Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it."
+      ],
+      "evidence": [
+        {
+          "tool": "find_best_run",
+          "status": "ok",
+          "request_id": "8ec4542bf692",
+          "duration_ms": 8.66,
+          "summary": "ok (best run 485ce030)"
+        },
+        {
+          "tool": "get_experiment_dataset",
+          "status": "ok",
+          "request_id": "8ec4542bf692",
+          "duration_ms": 8.34,
+          "summary": "ok"
+        },
+        {
+          "tool": "diagnose_deployment",
+          "status": "ok",
+          "request_id": "8ec4542bf692",
+          "duration_ms": 0.52,
+          "summary": "ok (healthy=True)"
+        },
+        {
+          "tool": "get_deployed_version",
+          "status": "ok",
+          "request_id": "8ec4542bf692",
+          "duration_ms": 0.25,
+          "summary": "ok"
+        },
+        {
+          "tool": "get_dag_run_status",
+          "status": "error",
+          "request_id": "8ec4542bf692",
+          "duration_ms": 2.29,
+          "summary": "error: ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8080): Max retries exceeded with url: /auth/token (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8080): Failed t"
+        }
+      ],
+      "tools_used": [
+        "find_best_run",
+        "get_experiment_dataset",
+        "diagnose_deployment",
+        "get_deployed_version",
+        "get_dag_run_status"
+      ],
+      "pending_confirmation": []
+    }
+  }
+]

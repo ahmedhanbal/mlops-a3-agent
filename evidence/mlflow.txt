@@ -1,0 +1,13 @@
+EXPERIMENT 1 breast-cancer-classifier
+  f44eb701 rf-v1-small        f1=0.9655 data=data-v1 gate=passed params={'n_estimators': '50', 'max_depth': '4'}
+  5a12e145 rf-v1-medium       f1=0.9583 data=data-v1 gate=passed params={'n_estimators': '150', 'max_depth': '8'}
+  5a2bfd38 rf-v1-large        f1=0.9583 data=data-v1 gate=passed params={'n_estimators': '300', 'max_depth': '12'}
+  9b920ea6 rf-v2-small        f1=0.9756 data=data-v2 gate=passed params={'n_estimators': '50', 'max_depth': '4'}
+  a5fe9f14 rf-v2-medium       f1=0.9756 data=data-v2 gate=passed params={'n_estimators': '150', 'max_depth': '8'}
+  58e0ef73 rf-v2-large        f1=0.9756 data=data-v2 gate=passed params={'n_estimators': '300', 'max_depth': '12'}
+  be8740ae rf-v2-strict-gate  f1=0.9474 data=data-v2 gate=failed params={'n_estimators': '1', 'max_depth': '1'}
+  27210d8a injected-weak-model f1=0.9474 data=data-v2 gate=failed params={'n_estimators': '1', 'max_depth': '1'}
+  d7c90ee5 airflow-manual__2026-11-09T08:14:41.573512+00:00 f1=0.9756 data=data-v2 gate=passed params={'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:14:41.573512+00:00'}
+  485ce030 airflow-manual__2026-11-09T08:15:00.031313+00:00 f1=0.9756 data=data-v2 gate=failed params={'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}
+EXPERIMENT 0 Default
+MODEL iris-inference-model [(7, 'd7c90ee5'), (6, '58e0ef73'), (5, 'a5fe9f14'), (4, '9b920ea6'), (3, '5a2bfd38'), (2, '5a12e145'), (1, 'f44eb701')] {'candidate': 7}

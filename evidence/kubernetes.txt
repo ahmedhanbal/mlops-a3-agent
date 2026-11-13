@@ -1,0 +1,5 @@
+$ kubectl -n mlops-agent get deploy,pods,svc,cm
+./scripts/collect_evidence.sh: line 19: kubectl: command not found
+
+$ kubectl -n mlops-agent describe deploy iris-inference
+./scripts/collect_evidence.sh: line 19: kubectl: command not found

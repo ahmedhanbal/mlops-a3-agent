@@ -1,0 +1,25 @@
+$ dvc status
+train:
+	changed deps:
+		modified:           data/dataset.csv
+		modified:           training/train.py
+		modified:           training/pipeline_steps.py
+	changed outs:
+		modified:           models/model.joblib
+
+$ git tag
+data-v1
+data-v2
+
+$ cat data/dataset.csv.dvc
+outs:
+- md5: a844f94d05909b66d4128d3e925b202d
+  size: 267749
+  hash: md5
+  path: dataset.csv
+
+$ dvc diff data-v1 data-v2
+Modified:
+    data/dataset.csv
+
+files summary: 1 modified
