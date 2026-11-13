@@ -1,0 +1,23 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python -m training.train --dataset data/dataset.csv --tracking-uri 
+      sqlite:///mlflow.db
+    deps:
+    - path: data/dataset.csv
+      hash: md5
+      md5: a844f94d05909b66d4128d3e925b202d
+      size: 267749
+    - path: training/pipeline_steps.py
+      hash: md5
+      md5: c69abeffeb5ef42ba94b6ff6d53ccc03
+      size: 8326
+    - path: training/train.py
+      hash: md5
+      md5: 2d20f459f95550c3c4418ba9668c06c5
+      size: 2126
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: 290c9384d4130ae4f549fe0a0a8feac2
+      size: 766450
