@@ -1,11 +1,5 @@
 $ dvc status
-train:
-	changed deps:
-		modified:           data/dataset.csv
-		modified:           training/train.py
-		modified:           training/pipeline_steps.py
-	changed outs:
-		modified:           models/model.joblib
+Data and pipelines are up to date.
 
 $ git tag
 data-v1
