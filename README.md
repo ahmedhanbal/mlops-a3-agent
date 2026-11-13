@@ -51,4 +51,4 @@ State-changing requests (trigger DAG, restart deployment, dataset checkout) retu
 `GET /tools` lists the 26 tools (7 DVC, 7 MLflow, 5 Airflow, 7 Kubernetes).
 
 ## 5. Tests and CI
-`pytest -q` (88 tests; Kubernetes/Airflow/LLM mocked; real DVC + MLflow in temp dirs) · `ruff check . && ruff format --check .` · `.github/workflows/ci.yml` runs both on every PR and push.
+`pytest -q` (87 tests; Kubernetes/Airflow/LLM mocked; real DVC + MLflow in temp dirs) · `ruff check . && ruff format --check .` · `.github/workflows/ci.yml` runs both on every PR and push.
