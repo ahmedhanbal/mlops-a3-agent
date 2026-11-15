@@ -1,6 +1,7 @@
 """LLM back-ends behind one interface.
 
-* AnthropicLLM  - real tool calling through the Anthropic Messages API.
+* OpenAICompatLLM - provider-neutral tool calling over any OpenAI-compatible /chat/completions endpoint
+                    (DeepSeek, OpenRouter, vLLM, Ollama, ...). Configured only by LLM_BASE_URL / LLM_API_KEY / LLM_MODEL.
 * RuleBasedLLM  - offline deterministic planner (same interface). Used when no API key is configured, as the
                   fallback if the LLM API fails, and in tests/CI. It selects tools from the request text.
 """
@@ -12,6 +13,8 @@ import os
 import re
 from dataclasses import dataclass, field
 from typing import Any, Protocol
+
+import requests
 
 from agent.config import Settings
 from agent.schemas import ToolCall
@@ -37,21 +40,61 @@ class LLM(Protocol):
     def complete(self, system: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> LLMReply: ...
 
 
-class AnthropicLLM:
-    name = "anthropic"
+def to_openai_messages(system: str, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert the orchestrator's neutral block messages to OpenAI chat format."""
+    out: list[dict[str, Any]] = [{"role": "system", "content": system}]
+    for m in messages:
+        content = m["content"]
+        if isinstance(content, str):
+            out.append({"role": m["role"], "content": content})
+        elif m["role"] == "assistant":
+            text = "".join(b["text"] for b in content if b["type"] == "text")
+            calls = [
+                {"id": b["id"], "type": "function", "function": {"name": b["name"], "arguments": json.dumps(b["input"])}}
+                for b in content
+                if b["type"] == "tool_use"
+            ]
+            msg: dict[str, Any] = {"role": "assistant", "content": text or None}
+            if calls:
+                msg["tool_calls"] = calls
+            out.append(msg)
+        else:  # user turn carrying tool results
+            out += [
+                {"role": "tool", "tool_call_id": b["tool_use_id"], "content": b["content"]} for b in content if b["type"] == "tool_result"
+            ]
+    return out
 
-    def __init__(self, model: str, client: Any = None) -> None:
-        if client is None:
-            import anthropic
 
-            client = anthropic.Anthropic(timeout=30.0, max_retries=2)  # key from ANTHROPIC_API_KEY
-        self.client, self.model = client, model
+class OpenAICompatLLM:
+    name = "llm"
+
+    def __init__(self, base_url: str, model: str, api_key: str | None = None, timeout: float = 60.0) -> None:
+        self.base_url, self.model, self.timeout = base_url.rstrip("/"), model, timeout
+        self._key = api_key if api_key is not None else os.getenv("LLM_API_KEY", "")  # never logged
 
     def complete(self, system: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> LLMReply:
-        resp = self.client.messages.create(model=self.model, max_tokens=1500, system=system, tools=tools, messages=messages)
-        text = "".join(b.text for b in resp.content if b.type == "text")
-        calls = [ToolCall(id=b.id, name=b.name, arguments=dict(b.input)) for b in resp.content if b.type == "tool_use"]
-        return LLMReply(text=text, tool_calls=calls)
+        payload = {
+            "model": self.model,
+            "messages": to_openai_messages(system, messages),
+            "tools": [
+                {"type": "function", "function": {"name": t["name"], "description": t["description"], "parameters": t["input_schema"]}}
+                for t in tools
+            ],
+            "temperature": 0,
+            "max_tokens": 1500,
+        }
+        headers = {"Authorization": f"Bearer {self._key}"} if self._key else {}
+        resp = requests.post(f"{self.base_url}/chat/completions", json=payload, headers=headers, timeout=self.timeout)
+        resp.raise_for_status()
+        msg = resp.json()["choices"][0]["message"]
+        calls = []
+        for c in msg.get("tool_calls") or []:
+            try:
+                args = json.loads(c["function"].get("arguments") or "{}")
+            except ValueError:
+                args = {}
+            calls.append(ToolCall(id=c["id"], name=c["function"]["name"], arguments=args if isinstance(args, dict) else {}))
+        return LLMReply(text=msg.get("content") or "", tool_calls=calls)
 
 
 # --- offline planner ----------------------------------------------------------------------------
@@ -199,6 +242,6 @@ def make_llm(settings: Settings) -> LLM:
     mode = settings.llm_mode
     if mode == "rules":
         return RuleBasedLLM()
-    if mode == "anthropic" or (mode == "auto" and os.getenv("ANTHROPIC_API_KEY")):
-        return AnthropicLLM(settings.llm_model)
+    if mode == "llm" or (mode == "auto" and os.getenv("LLM_API_KEY")):
+        return OpenAICompatLLM(settings.llm_base_url, settings.llm_model)
     return RuleBasedLLM()

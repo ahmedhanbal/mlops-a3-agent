@@ -25,7 +25,7 @@ pip install mlflow-skinny scikit-learn pandas joblib pyyaml
 | `AIRFLOW_BASE_URL`, `AIRFLOW_USERNAME`, `AIRFLOW_PASSWORD` | Airflow 3 API (JWT via `POST /auth/token`) |
 | `AIRFLOW_APPROVED_DAGS` | only these DAGs can be triggered (default `training_pipeline`) |
 | `K8S_APPROVED_NAMESPACE` | the only namespace the agent may read/modify (`mlops-agent`) |
-| `ANTHROPIC_API_KEY`, `AGENT_LLM` (`auto`/`rules`/`anthropic`) | LLM back-end; with no key an offline rule-based planner is used |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `AGENT_LLM` (`auto`/`rules`/`llm`) | any OpenAI-compatible LLM (default DeepSeek `deepseek-chat`); with no key an offline rule-based planner is used |
 | `AGENT_API_KEY` | if set, `/chat` requires header `X-API-Key` |
 | `F1_QUALITY_GATE`, `FRESHNESS_POLICY_DAYS` | quality gate (0.93) and freshness policy (30 d) |
 
@@ -51,4 +51,4 @@ State-changing requests (trigger DAG, restart deployment, dataset checkout) retu
 `GET /tools` lists the 26 tools (7 DVC, 7 MLflow, 5 Airflow, 7 Kubernetes).
 
 ## 5. Tests and CI
-`pytest -q` (87 tests; Kubernetes/Airflow/LLM mocked; real DVC + MLflow in temp dirs) · `ruff check . && ruff format --check .` · `.github/workflows/ci.yml` runs both on every PR and push.
+`pytest -q` (89 tests; Kubernetes/Airflow/LLM mocked; real DVC + MLflow in temp dirs) · `ruff check . && ruff format --check .` · `.github/workflows/ci.yml` runs both on every PR and push.

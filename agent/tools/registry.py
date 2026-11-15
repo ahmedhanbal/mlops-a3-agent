@@ -39,7 +39,7 @@ class Tool:
     writes: bool = False  # True => changes external state => needs explicit confirmation
 
     def spec(self) -> dict[str, Any]:
-        """Anthropic-style tool specification (name, description, JSON schema)."""
+        """Provider-neutral tool specification (name, description, JSON schema)."""
         suffix = " [STATE-CHANGING: requires explicit user confirmation]" if self.writes else " [read-only]"
         schema = self.input_model.model_json_schema()
         schema.pop("title", None)

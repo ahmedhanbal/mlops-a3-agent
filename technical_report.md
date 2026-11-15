@@ -261,6 +261,6 @@ Root causes and resolutions are stated in each section. Layer coverage: data (1)
 - Kubernetes and Airflow REST paths are verified with mocks in CI; a dedicated kind-based integration job is the next step.
 - Tool timeouts stop waiting but cannot kill a running thread; use subprocess/async clients with cancellation.
 - Airflow DAG passes files between tasks via a local work directory (`MLOPS_WORK_DIR`); a distributed executor needs shared storage or artifact passing through MLflow.
-- Rule-based planner covers the demo intents only; with `ANTHROPIC_API_KEY` the LLM selects tools freely (not covered by CI because it needs a secret).
+- Rule-based planner covers the demo intents only; with `LLM_API_KEY` the LLM selects tools freely (not covered by CI because it needs a secret).
 - Retraining triggers use offline metrics + age; add online drift/latency monitoring as another evidence source.
 - DVC remote is local; use S3/GCS with restricted credentials in production. Registry/deployment names still carry the `iris-` prefix from the first draft.

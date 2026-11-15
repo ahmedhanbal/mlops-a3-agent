@@ -16,7 +16,6 @@ dependencies = [
   "mlflow>=2.14",
   "dvc>=3.50",
   "kubernetes>=29.0",
-  "anthropic>=0.40",
   "scikit-learn>=1.4",
   "pandas>=2.1",
   "joblib>=1.3",

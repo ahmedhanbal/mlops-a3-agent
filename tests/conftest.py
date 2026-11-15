@@ -27,7 +27,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setenv("TOOL_TIMEOUT_S", "5")
     monkeypatch.setenv("HTTP_TIMEOUT_S", "2")
     monkeypatch.delenv("AGENT_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
     AirflowClient._token = None
     return repo
 

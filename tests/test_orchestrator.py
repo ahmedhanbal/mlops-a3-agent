@@ -172,3 +172,49 @@ def test_tool_timeout_is_surfaced_in_response(monkeypatch):
 def test_malformed_tool_payload_degrades_gracefully_instead_of_failing_the_request():
     r = agent({"find_best_run": {"unexpected": True}}).run("What is the best model by f1?")
     assert any("unexpected format" in u for u in r.uncertainties) and r.evidence[0].status == "ok"
+
+
+# --- provider-neutral LLM adapter ------------------------------------------------------------
+def test_openai_compat_llm_round_trip_with_tool_calls(monkeypatch):
+    import json
+
+    import responses
+
+    from agent.llm import OpenAICompatLLM, to_openai_messages
+
+    body = {
+        "choices": [
+            {
+                "message": {
+                    "content": None,
+                    "tool_calls": [
+                        {"id": "c1", "type": "function", "function": {"name": "find_best_run", "arguments": '{"metric": "f1"}'}}
+                    ],
+                }
+            }
+        ]
+    }
+    with responses.RequestsMock() as rsps:
+        rsps.add(responses.POST, "https://llm.test/v1/chat/completions", json=body)
+        llm = OpenAICompatLLM("https://llm.test/v1", "any-model", api_key="k-secret")
+        reply = llm.complete("sys", [{"role": "user", "content": "best model?"}], stub_registry().specs())
+        sent = json.loads(rsps.calls[0].request.body)
+        assert rsps.calls[0].request.headers["Authorization"] == "Bearer k-secret"
+    assert reply.tool_calls[0].name == "find_best_run" and reply.tool_calls[0].arguments == {"metric": "f1"}
+    assert sent["tools"][0]["type"] == "function" and sent["model"] == "any-model"
+    msgs = [
+        {"role": "user", "content": "q"},
+        {"role": "assistant", "content": reply.raw_content},
+        {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "c1", "content": "{}"}]},
+    ]
+    conv = to_openai_messages("sys", msgs)
+    assert [m["role"] for m in conv] == ["system", "user", "assistant", "tool"] and conv[2]["tool_calls"][0]["id"] == "c1"
+
+
+def test_agent_uses_generic_llm_and_falls_back_when_endpoint_is_down(monkeypatch):
+    from agent.llm import OpenAICompatLLM
+
+    monkeypatch.setenv("LLM_API_KEY", "x")
+    llm = OpenAICompatLLM("http://127.0.0.1:1", "m", api_key="x", timeout=1)
+    r = Agent(registry=stub_registry(), llm=llm).run("Why is my prediction API unavailable?")
+    assert r.tools_used == ["diagnose_deployment"]

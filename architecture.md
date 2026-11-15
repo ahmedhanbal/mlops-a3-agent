@@ -10,7 +10,7 @@ User -> FastAPI (agent/main.py: validation, API key, request id)
 **Why these choices**
 - *Registry as single choke point*: every call gets pydantic validation (`invalid_request`), timeout (`timeout`), write-confirmation (`confirmation_required`), policy (`denied`) and a JSON log line (tool, status, duration, request id; secrets redacted).
 - *Structured answer is not LLM-authored*: `reasoning.correlate` derives facts/uncertainties/actions from tool results only. If all tools fail the LLM text is discarded. Failures are listed as uncertainties, never filled in.
-- *LLM interface with two back-ends*: Anthropic tool use, and an offline planner (same interface) used without API key, on LLM outage, and in CI.
+- *LLM interface with two back-ends*: a provider-neutral OpenAI-compatible tool-calling client (e.g. DeepSeek), and an offline planner (same interface) used without API key, on LLM outage, and in CI.
 - *Retraining policy*: recommended only for a failed quality gate, freshness-policy breach, or supplied degradation results; never triggered from an analysis request.
 
 ## Tool permissions
