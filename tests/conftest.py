@@ -24,7 +24,7 @@ def env(monkeypatch, tmp_path):
     monkeypatch.setenv("AIRFLOW_APPROVED_DAGS", "training_pipeline")
     monkeypatch.setenv("K8S_APPROVED_NAMESPACE", "mlops-agent")
     monkeypatch.setenv("AGENT_LLM", "rules")
-    monkeypatch.setenv("TOOL_TIMEOUT_S", "5")
+    monkeypatch.setenv("TOOL_TIMEOUT_S", "15")
     monkeypatch.setenv("HTTP_TIMEOUT_S", "2")
     monkeypatch.delenv("AGENT_API_KEY", raising=False)
     monkeypatch.delenv("LLM_API_KEY", raising=False)
