@@ -1,0 +1,28 @@
+﻿{
+    "request_id":  "5dbf0066fff8",
+    "answer":  "## Known facts (from tool result)\n\n**Run `61fc62922cd64d7eb8862e1e39377030`** (run name `airflow-manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7`) recorded the following dataset provenance:\n\n| Field | Value |\n|---|---|\n| Dataset version | `md5:761733f9` |\n| Dataset md5 | `761733f980870acabad9ead42a09fe8a` |\n| Dataset path | `data/dataset.csv` |\n| Dataset git commit | `null` (not recorded) |\n| Provenance recorded | yes |\n\nThe run\u0027s recorded md5 matches the current workspace pointer for `data/dataset.csv`, so this run was trained on the dataset version that is currently the active one (at least by md5).\n\n## Uncertainties\n\n- No git commit was recorded for this dataset version, and the tool reports `commit_exists_in_local_repo: false` â so I cannot tie `md5:761733f9` to a specific Git revision or data tag. That means the version can\u0027t currently be reproduced via a Git revision, only potentially via the md5.\n- Matching md5 tells us the bytes are the same as the current pointer; it does not tell us the run\u0027s metrics, status, or whether it was ever a candidate/validated model. (I haven\u0027t inspected those, since you only asked about the dataset version.)\n\n## Recommended next actions\n\n- If you need a reproducible handle on this dataset, run `explain_dataset_reproduction` with `rev=md5:761733f9` (or via the recorded md5 context) to see whether the version can be re-materialised.\n- If you want to know *which data tag* this corresponds to, use `compare_dataset_versions` against candidate tags (e.g. `data-v1`, `data-v2`) to find the matching md5.\n- Let me know if you\u0027d also like the run\u0027s metrics/params or its relationship to the currently deployed model.\n\n**Known facts (from tool evidence)**\n- DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.",
+    "known_facts":  [
+                        "DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False."
+                    ],
+    "uncertainties":  [
+
+                      ],
+    "recommended_actions":  [
+
+                            ],
+    "evidence":  [
+                     {
+                         "tool":  "get_experiment_dataset",
+                         "status":  "ok",
+                         "request_id":  "5dbf0066fff8",
+                         "duration_ms":  180.15,
+                         "summary":  "ok"
+                     }
+                 ],
+    "tools_used":  [
+                       "get_experiment_dataset"
+                   ],
+    "pending_confirmation":  [
+
+                             ]
+}

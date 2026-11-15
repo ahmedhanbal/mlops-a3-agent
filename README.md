@@ -51,4 +51,17 @@ State-changing requests (trigger DAG, restart deployment, dataset checkout) retu
 `GET /tools` lists the 26 tools (7 DVC, 7 MLflow, 5 Airflow, 7 Kubernetes).
 
 ## 5. Tests and CI
-`pytest -q` (89 tests; Kubernetes/Airflow/LLM mocked; real DVC + MLflow in temp dirs) · `ruff check . && ruff format --check .` · `.github/workflows/ci.yml` runs both on every PR and push.
+`pytest -q` (87 passed, 2 skipped; Kubernetes/Airflow/LLM mocked; real DVC + MLflow in temp dirs) · `ruff check . && ruff format --check .` · `.github/workflows/ci.yml` runs both on every PR and push.
+
+## 6. Evidence gallery
+
+The ordered evidence set is documented in the
+[technical report](technical_report.md):
+
+1. [MLflow runs](screenshots/mlflow_runs.png)
+2. [Airflow DAG graph](screenshots/airflow_dag_graph.png)
+3. [Successful Airflow run](screenshots/airflow_run_success.png)
+4. [Kubernetes inference API](screenshots/k8s_inference_docs.png)
+5. [Agent Swagger UI](screenshots/agent_chat.png)
+
+Additional live text and JSON exports are in [evidence/](evidence/).

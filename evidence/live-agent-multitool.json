@@ -1,0 +1,104 @@
+﻿{
+    "request_id":  "89e6d6a2ce63",
+    "answer":  "## Report\n\n### 1. Best recent model\n- **Run ID:** `61fc62922cd64d7eb8862e1e39377030` (experiment `breast-cancer-classifier`, id 1)\n- **Run name:** `airflow-manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7`, status FINISHED\n- **Metrics:** f1 = 0.97561, accuracy = 0.96951, precision = 0.97087, recall = 0.98039\n- **Params:** n_estimators = 200, max_depth = 8\n- **Quality gate:** passed\n- **Selection basis:** max f1 among the 4 most recent finished runs.\n- â ï¸ Note: all 4 recent runs have an **identical** f1 (0.97561) and identical params â the \"best\" pick is effectively a tie-break, not a genuine improvement.\n\n### 2. Dataset version used by that run\n- Recorded provenance: `md5:761733f9` â full md5 `761733f980870acabad9ead42a09fe8a`, path `data/dataset.csv`, git commit **null** (not recorded; that commit does not exist in the local repo).\n- That md5 **matches the current workspace pointer**, which corresponds to the DVC version label **`data-v2`** (same md5, size 268,569 bytes, last changed commit `6af2456`).\n\n### 3. Kubernetes deployment status\n- Deployment `iris-inference` (namespace `mlops-agent`): **2/2 desired, 2 ready, 2 available** â healthy. Image `mlops-inference:1.0.0`.\n- Both pods `Running`/ready, **0 restarts**.\n- Deployed config reports `model_run_id = 82ac68fa015345afa553f1c4898660b8`, `dataset_version = data-v2`, generation 6 = observed generation 6.\n- â ï¸ The deployed model run (`82ac68faâ¦`) is **not** the best run identified above â they are different runs with the same f1 score.\n\n### 4. Latest Airflow run status\n- `training_pipeline` latest run `manual__2026-11-15T16:36:31â¦` â **success** (16:36â16:37).\n- Previous run `manual__2026-11-15T16:22:36â¦` â **failed**.\n\n---\n\n**Uncertainties / gaps**\n- The best run\u0027s dataset provenance records an md5 but **no git commit**, and the recorded commit is absent locally â so it isn\u0027t pinned to a reproducible revision via that field (the md5 does match `data-v2`).\n- No online/drift/latency evidence was gathered; offline f1 alone does not establish production readiness (the tool flags this explicitly).\n- I did not investigate the previous Airflow run\u0027s failure â that would require a separate diagnostics call.\n\n**Recommended actions (nothing triggered)**\n- If you want the best run to actually serve, note the deployment currently runs a *different* run id; promoting `61fc6292â¦` would require a deploy/rollout action â confirm with me first if desired.\n- Optionally investigate the failed run `manual__2026-11-15T16:22:36â¦` to confirm the pipeline is now reliably green.\n\nNo state-changing actions were taken.\n\nNote: unavailable evidence - find_best_run (error).\n\n**Known facts (from tool evidence)**\n- MLflow: best of the 4 most recent finished runs by f1 is run 61fc6292 (f1=0.97561, params {\u0027n_estimators\u0027: \u0027200\u0027, \u0027max_depth\u0027: \u00278\u0027, \u0027airflow_run_id\u0027: \u0027manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7\u0027}, started 2026-11-15T16:37:03Z).\n- MLflow: 4 runs listed.\n- DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.\n- DVC: current version of data/dataset.csv is data-v2 (md5 761733f9, HEAD 6af245623b).\n- Kubernetes: deployed image(s) [\u0027mlops-inference:1.0.0\u0027]; app version 1.0.0; model run 82ac68fa015345afa553f1c4898660b8; dataset data-v2.\n- Deployed model run (82ac68fa) differs from the best candidate (61fc6292).\n- Kubernetes: iris-inference 2/2 ready; 2 pod(s).\n- Airflow: latest training_pipeline state=success; recent: manual__2026-11-15T16:36:31.=success, manual__2026-11-15T16:22:36.=failed.\n- Retraining assessment: no retraining trigger found in the evidence that WAS collected (no failed quality gate, freshness policy of 30 days not exceeded, no degradation results supplied).\n\n**Uncertainties**\n- MLflow evidence unavailable (find_best_run: error - ValueError: experiment \u0027None\u0027 not found). Nothing is claimed about it.\n- MLflow: 4 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n- The assessment is incomplete because evidence from [\u0027find_best_run\u0027] was unavailable; a failed pipeline run or unhealthy deployment cannot be excluded.\n- No online performance/drift monitoring data is available; supply degradation results if you have them.\n\n**Recommended actions**\n- Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain).",
+    "known_facts":  [
+                        "MLflow: best of the 4 most recent finished runs by f1 is run 61fc6292 (f1=0.97561, params {\u0027n_estimators\u0027: \u0027200\u0027, \u0027max_depth\u0027: \u00278\u0027, \u0027airflow_run_id\u0027: \u0027manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7\u0027}, started 2026-11-15T16:37:03Z).",
+                        "MLflow: 4 runs listed.",
+                        "DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.",
+                        "DVC: current version of data/dataset.csv is data-v2 (md5 761733f9, HEAD 6af245623b).",
+                        "Kubernetes: deployed image(s) [\u0027mlops-inference:1.0.0\u0027]; app version 1.0.0; model run 82ac68fa015345afa553f1c4898660b8; dataset data-v2.",
+                        "Deployed model run (82ac68fa) differs from the best candidate (61fc6292).",
+                        "Kubernetes: iris-inference 2/2 ready; 2 pod(s).",
+                        "Airflow: latest training_pipeline state=success; recent: manual__2026-11-15T16:36:31.=success, manual__2026-11-15T16:22:36.=failed.",
+                        "Retraining assessment: no retraining trigger found in the evidence that WAS collected (no failed quality gate, freshness policy of 30 days not exceeded, no degradation results supplied)."
+                    ],
+    "uncertainties":  [
+                          "MLflow evidence unavailable (find_best_run: error - ValueError: experiment \u0027None\u0027 not found). Nothing is claimed about it.",
+                          "MLflow: 4 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
+                          "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)",
+                          "The assessment is incomplete because evidence from [\u0027find_best_run\u0027] was unavailable; a failed pipeline run or unhealthy deployment cannot be excluded.",
+                          "No online performance/drift monitoring data is available; supply degradation results if you have them."
+                      ],
+    "recommended_actions":  [
+                                "Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain)."
+                            ],
+    "evidence":  [
+                     {
+                         "tool":  "find_best_run",
+                         "status":  "error",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  196.43,
+                         "summary":  "error: ValueError: experiment \u0027None\u0027 not found"
+                     },
+                     {
+                         "tool":  "list_k8s_workloads",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  5867.99,
+                         "summary":  "ok"
+                     },
+                     {
+                         "tool":  "get_dag_run_status",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  257.98,
+                         "summary":  "ok (latest_state=success)"
+                     },
+                     {
+                         "tool":  "list_mlflow_experiments",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  65.12,
+                         "summary":  "ok (count=2)"
+                     },
+                     {
+                         "tool":  "find_best_run",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  143.07,
+                         "summary":  "ok (best run 61fc6292)"
+                     },
+                     {
+                         "tool":  "list_mlflow_runs",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  89.38,
+                         "summary":  "ok (count=4)"
+                     },
+                     {
+                         "tool":  "get_deployed_version",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  84.9,
+                         "summary":  "ok"
+                     },
+                     {
+                         "tool":  "get_experiment_dataset",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  31.09,
+                         "summary":  "ok"
+                     },
+                     {
+                         "tool":  "get_dataset_version",
+                         "status":  "ok",
+                         "request_id":  "89e6d6a2ce63",
+                         "duration_ms":  462.02,
+                         "summary":  "ok"
+                     }
+                 ],
+    "tools_used":  [
+                       "find_best_run",
+                       "list_k8s_workloads",
+                       "get_dag_run_status",
+                       "list_mlflow_experiments",
+                       "find_best_run",
+                       "list_mlflow_runs",
+                       "get_deployed_version",
+                       "get_experiment_dataset",
+                       "get_dataset_version"
+                   ],
+    "pending_confirmation":  [
+
+                             ]
+}

@@ -1,5 +1,71 @@
-$ kubectl -n mlops-agent get deploy,pods,svc,cm
-./scripts/collect_evidence.sh: line 19: kubectl: command not found
+﻿$ kubectl -n mlops-agent get deploy,pods,svc,cm
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                  SELECTOR
+deployment.apps/iris-inference   2/2     2            2           17m   api          mlops-inference:1.0.0   app=iris-inference
+
+NAME                                  READY   STATUS    RESTARTS   AGE   IP            NODE                    NOMINATED NODE   READINESS GATES
+pod/iris-inference-7d9b97cf76-cmc6v   1/1     Running   0          10m   10.244.0.12   desktop-control-plane   <none>           <none>
+pod/iris-inference-7d9b97cf76-w8pg5   1/1     Running   0          10m   10.244.0.11   desktop-control-plane   <none>           <none>
+
+NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE   SELECTOR
+service/iris-inference   ClusterIP   10.96.223.123   <none>        80/TCP    16m   app=iris-inference
+
+NAME                               DATA   AGE
+configmap/failure-injection-note   1      15m
+configmap/iris-inference-config    5      17m
+configmap/kube-root-ca.crt         1      17m
 
 $ kubectl -n mlops-agent describe deploy iris-inference
-./scripts/collect_evidence.sh: line 19: kubectl: command not found
+Name:                   iris-inference
+Namespace:              mlops-agent
+CreationTimestamp:      Sun, 15 Nov 2026 21:08:53 +0500
+Labels:                 app=iris-inference
+Annotations:            deployment.kubernetes.io/revision: 6
+Selector:               app=iris-inference
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  0 max unavailable, 1 max surge
+Pod Template:
+  Labels:       app=iris-inference
+                app.kubernetes.io/version=1.0.0
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-11-15T21:14:55+05:00
+  Containers:
+   api:
+    Image:      mlops-inference:1.0.0
+    Port:       8000/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      100m
+      memory:   256Mi
+    Liveness:   http-get http://:8000/health delay=10s timeout=1s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8000/ready delay=5s timeout=1s period=5s #success=1 #failure=3
+    Environment Variables from:
+      iris-inference-config  ConfigMap  Optional: false
+    Environment:             <none>
+    Mounts:                  <none>
+  Volumes:                   <none>
+  Node-Selectors:            <none>
+  Tolerations:               <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  iris-inference-579d657969 (0/0 replicas created), iris-inference-76769c4c8c (0/0 replicas created), iris-inference-855bf9b998 (0/0 replicas created), iris-inference-c74d8b469 (0/0 replicas created)
+NewReplicaSet:   iris-inference-7d9b97cf76 (2/2 replicas created)
+Events:
+  Type    Reason             Age                From                   Message
+  ----    ------             ----               ----                   -------
+  Normal  ScalingReplicaSet  17m                deployment-controller  Scaled up replica set iris-inference-579d657969 from 0 to 2
+  Normal  ScalingReplicaSet  15m                deployment-controller  Scaled up replica set iris-inference-76769c4c8c from 0 to 1
+  Normal  ScalingReplicaSet  14m                deployment-controller  Scaled down replica set iris-inference-76769c4c8c from 1 to 0
+  Normal  ScalingReplicaSet  14m                deployment-controller  Scaled up replica set iris-inference-855bf9b998 from 0 to 1
+  Normal  ScalingReplicaSet  14m                deployment-controller  Scaled down replica set iris-inference-579d657969 from 2 to 1
+  Normal  ScalingReplicaSet  14m                deployment-controller  Scaled up replica set iris-inference-855bf9b998 from 1 to 2
+  Normal  ScalingReplicaSet  14m                deployment-controller  Scaled down replica set iris-inference-579d657969 from 1 to 0
+  Normal  ScalingReplicaSet  14m                deployment-controller  Scaled up replica set iris-inference-c74d8b469 from 0 to 1
+  Normal  ScalingReplicaSet  10m                deployment-controller  Scaled down replica set iris-inference-c74d8b469 from 1 to 0
+  Normal  ScalingReplicaSet  10m (x4 over 10m)  deployment-controller  (combined from similar events): Scaled down replica set iris-inference-855bf9b998 from 1 to 0

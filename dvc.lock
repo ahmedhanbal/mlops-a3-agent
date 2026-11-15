@@ -6,8 +6,8 @@ stages:
     deps:
     - path: data/dataset.csv
       hash: md5
-      md5: a844f94d05909b66d4128d3e925b202d
-      size: 267749
+      md5: 761733f980870acabad9ead42a09fe8a
+      size: 268569
     - path: training/pipeline_steps.py
       hash: md5
       md5: c69abeffeb5ef42ba94b6ff6d53ccc03
@@ -19,5 +19,5 @@ stages:
     outs:
     - path: models/model.joblib
       hash: md5
-      md5: 290c9384d4130ae4f549fe0a0a8feac2
-      size: 766450
+      md5: db19cd00f57c1ccdb4d9482d1e415823
+      size: 766418

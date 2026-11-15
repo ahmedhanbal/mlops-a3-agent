@@ -1,201 +1,373 @@
-[
-  {
-    "scenario": "1. Dataset provenance",
-    "query": "Which dataset version was used for experiment 1?",
-    "response": {
-      "request_id": "932a88f7dd36",
-      "answer": "**Known facts (from tool evidence)**\n- DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.\n- DVC: inspected runs span dataset versions ['data-v1', 'data-v2'].",
-      "known_facts": [
-        "DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.",
-        "DVC: inspected runs span dataset versions ['data-v1', 'data-v2']."
-      ],
-      "uncertainties": [],
-      "recommended_actions": [],
-      "evidence": [
-        {
-          "tool": "get_experiment_dataset",
-          "status": "ok",
-          "request_id": "932a88f7dd36",
-          "duration_ms": 667.59,
-          "summary": "ok"
-        }
-      ],
-      "tools_used": [
-        "get_experiment_dataset"
-      ],
-      "pending_confirmation": []
+﻿[
+    {
+        "scenario":  "dataset",
+        "source":  "evidence\\live-agent-dataset.json",
+        "response":  {
+                         "request_id":  "5dbf0066fff8",
+                         "answer":  "## Known facts (from tool result)\n\n**Run `61fc62922cd64d7eb8862e1e39377030`** (run name `airflow-manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7`) recorded the following dataset provenance:\n\n| Field | Value |\n|---|---|\n| Dataset version | `md5:761733f9` |\n| Dataset md5 | `761733f980870acabad9ead42a09fe8a` |\n| Dataset path | `data/dataset.csv` |\n| Dataset git commit | `null` (not recorded) |\n| Provenance recorded | yes |\n\nThe run\u0027s recorded md5 matches the current workspace pointer for `data/dataset.csv`, so this run was trained on the dataset version that is currently the active one (at least by md5).\n\n## Uncertainties\n\n- No git commit was recorded for this dataset version, and the tool reports `commit_exists_in_local_repo: false` â so I cannot tie `md5:761733f9` to a specific Git revision or data tag. That means the version can\u0027t currently be reproduced via a Git revision, only potentially via the md5.\n- Matching md5 tells us the bytes are the same as the current pointer; it does not tell us the run\u0027s metrics, status, or whether it was ever a candidate/validated model. (I haven\u0027t inspected those, since you only asked about the dataset version.)\n\n## Recommended next actions\n\n- If you need a reproducible handle on this dataset, run `explain_dataset_reproduction` with `rev=md5:761733f9` (or via the recorded md5 context) to see whether the version can be re-materialised.\n- If you want to know *which data tag* this corresponds to, use `compare_dataset_versions` against candidate tags (e.g. `data-v1`, `data-v2`) to find the matching md5.\n- Let me know if you\u0027d also like the run\u0027s metrics/params or its relationship to the currently deployed model.\n\n**Known facts (from tool evidence)**\n- DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.",
+                         "known_facts":  [
+                                             "DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False."
+                                         ],
+                         "uncertainties":  [
+
+                                           ],
+                         "recommended_actions":  [
+
+                                                 ],
+                         "evidence":  [
+                                          {
+                                              "tool":  "get_experiment_dataset",
+                                              "status":  "ok",
+                                              "request_id":  "5dbf0066fff8",
+                                              "duration_ms":  180.15,
+                                              "summary":  "ok"
+                                          }
+                                      ],
+                         "tools_used":  [
+                                            "get_experiment_dataset"
+                                        ],
+                         "pending_confirmation":  [
+
+                                                  ]
+                     }
+    },
+    {
+        "scenario":  "mlflow",
+        "source":  "evidence\\live-agent-mlflow.json",
+        "response":  {
+                         "request_id":  "bf7af75ee503",
+                         "answer":  "## Known facts (from tool results)\n\n**Experiments:** 2 exist â `breast-cancer-classifier` (id 1, active) and `Default` (id 0). All 4 relevant runs are in experiment 1.\n\n**Recent runs (all FINISHED), ranked by F1:**\n\n| Rank | Run ID | Started | F1 | Acc | Prec | Recall | Params | Dataset recorded | Quality gate |\n|---|---|---|---|---|---|---|---|---|---|\n| 1 | `61fc62922cd64d7eb8862e1e39377030` | 2026-11-15T16:37 | 0.97561 | 0.96951 | 0.97087 | 0.98039 | n_est 200, depth 8 | md5:761733f9 | passed |\n| 2 | `82ac68fa015345afa553f1c4898660b8` | 2026-11-15T15:08 | 0.97561 | 0.96951 | 0.97087 | 0.98039 | n_est 200, depth 8 | data-v2 | passed |\n| 3 | `aae452ec8da84521a5a94974780c048c` | 2026-11-15T15:07 | 0.97561 | 0.96951 | 0.97087 | 0.98039 | n_est 200, depth 8 | data-v2 | passed |\n| 4 | `997bd776743b49efa416436191a8117a` | 2026-11-15T14:59 | 0.97561 | 0.96951 | 0.97087 | 0.98039 | n_est 200, depth 8 | data-v2 | passed |\n\n- `compare_mlflow_runs` confirms all four have **identical F1 and identical metrics**; the only differing param is `airflow_run_id`. So they are metric ties, and the \"leader\" is picked by recency, not by measurable superiority.\n- Dataset provenance is recorded for the top run (`get_experiment_dataset`): dataset.path `data/dataset.csv`, md5 `761733f980870acabad9ead42a09fe8a`, version tag `md5:761733f9`, and it **matches the current workspace pointer**. Caveat returned: `dataset_git_commit: null`, `commit_exists_in_local_repo: false`.\n- Registry: `iris-inference-model` has versions 1â4, all READY, each traceable to one of these runs. Version 4 â run `61fc629...` carries the alias **`candidate`**.\n- `find_best_run` readiness checks for run `61fc629...`: run_finished â, dataset_provenance_recorded â, quality_gate = passed â, meets_f1_threshold â, age 0.0 days â.\n\n## Uncertainties / caveats\n\n- **The four runs are effectively duplicates** (same data path, same hyperparameters, identical metrics). The F1 ranking is therefore not evidence that run #1 is genuinely better than #2â4 â it is simply the most recent.\n- **`find_best_run` explicitly warns**: offline metrics alone do not establish production readiness â no online/latency/drift evidence is present in these results. A high F1 is *not* proof of readiness.\n- The top run\u0027s dataset is identified by md5 only; no git commit is recorded and the commit does not exist locally, so exact reproduction provenance is weaker than the older runs\u0027 `data-v2` tag.\n- \"quality_gate: passed\" is a **recorded tag/run field** reported by the tool; I have not independently re-executed the gate. The three older runs also used a `data-v2` dataset, which the newer run does not use â so the gate results are not strictly comparable across the same data version.\n- I did not inspect Airflow run history or the k8s deployment here, so I cannot speak to the currently served model or pipeline health.\n\n## Recommendation\n\n1. **Best candidate by F1:** run `61fc62922cd64d7eb8862e1e39377030` (model version 4, alias `candidate`) â it ties the max F1 (0.97561), is the most recent, has recorded provenance matching the current workspace dataset, and its quality gate is recorded as passed. Its `candidate` alias already reflects this.\n2. **Treat the tie as a tie.** Before promoting, I\u0027d suggest resolving whether the three older `data-v2` runs and this run are true duplicates; if so, prefer the newest for provenance/freshness reasons only, not performance.\n3. **Do not promote on offline F1 alone.** Get online/latency/drift evidence before any production promotion.\n4. No retraining is warranted by the evidence here â no quality-gate failure, freshness breach, or degradation was found. I would not trigger anything without your explicit request.\n\nWould you like me to (a) inspect the Airflow `training_pipeline` runs behind these experiments, or (b) check the deployed `iris-inference` version/pod health to compare against this candidate? Both are read-only.\n\n**Known facts (from tool evidence)**\n- MLflow: best of the 4 most recent finished runs by f1 is run 61fc6292 (f1=0.97561, params {\u0027n_estimators\u0027: \u0027200\u0027, \u0027max_depth\u0027: \u00278\u0027, \u0027airflow_run_id\u0027: \u0027manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7\u0027}, started 2026-11-15T16:37:03Z).\n- MLflow: compared 4 runs on f1; leader 61fc6292; params that differ: [\u0027airflow_run_id\u0027].\n- MLflow: 4 runs listed.\n- MLflow registry: 1 registered model(s).\n- DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.\n- Retraining assessment: not necessary on current evidence - no failed quality gate, freshness policy (30 days) not exceeded, and no degradation results supplied.\n\n**Uncertainties**\n- MLflow: 4 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n- A higher metric on one split does not by itself make a model production-ready.\n- No online performance/drift monitoring data is available; supply degradation results if you have them.",
+                         "known_facts":  [
+                                             "MLflow: best of the 4 most recent finished runs by f1 is run 61fc6292 (f1=0.97561, params {\u0027n_estimators\u0027: \u0027200\u0027, \u0027max_depth\u0027: \u00278\u0027, \u0027airflow_run_id\u0027: \u0027manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7\u0027}, started 2026-11-15T16:37:03Z).",
+                                             "MLflow: compared 4 runs on f1; leader 61fc6292; params that differ: [\u0027airflow_run_id\u0027].",
+                                             "MLflow: 4 runs listed.",
+                                             "MLflow registry: 1 registered model(s).",
+                                             "DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.",
+                                             "Retraining assessment: not necessary on current evidence - no failed quality gate, freshness policy (30 days) not exceeded, and no degradation results supplied."
+                                         ],
+                         "uncertainties":  [
+                                               "MLflow: 4 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
+                                               "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)",
+                                               "A higher metric on one split does not by itself make a model production-ready.",
+                                               "No online performance/drift monitoring data is available; supply degradation results if you have them."
+                                           ],
+                         "recommended_actions":  [
+
+                                                 ],
+                         "evidence":  [
+                                          {
+                                              "tool":  "list_mlflow_experiments",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  82.9,
+                                              "summary":  "ok (count=2)"
+                                          },
+                                          {
+                                              "tool":  "find_best_run",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  311.09,
+                                              "summary":  "ok (best run 61fc6292)"
+                                          },
+                                          {
+                                              "tool":  "list_mlflow_runs",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  104.32,
+                                              "summary":  "ok (count=4)"
+                                          },
+                                          {
+                                              "tool":  "compare_mlflow_runs",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  435.37,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_mlflow_run_details",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  1915.2,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_experiment_dataset",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  192.31,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_model_versions",
+                                              "status":  "ok",
+                                              "request_id":  "bf7af75ee503",
+                                              "duration_ms":  846.78,
+                                              "summary":  "ok (count=1)"
+                                          }
+                                      ],
+                         "tools_used":  [
+                                            "list_mlflow_experiments",
+                                            "find_best_run",
+                                            "list_mlflow_runs",
+                                            "compare_mlflow_runs",
+                                            "get_mlflow_run_details",
+                                            "get_experiment_dataset",
+                                            "get_model_versions"
+                                        ],
+                         "pending_confirmation":  [
+
+                                                  ]
+                     }
+    },
+    {
+        "scenario":  "airflow",
+        "source":  "evidence\\live-agent-airflow.json",
+        "response":  {
+                         "request_id":  "d54ad27d9f47",
+                         "answer":  "## Airflow: `training_pipeline` â run \u0026 task states\n\n**DAG metadata** (from `list_airflow_dags`)\n- Only DAG present: `training_pipeline`, tags `mlops`, `training`, `paused: false`, approved for triggering.\n\n**Recent runs** (from `get_dag_run_status`, limit 5 â only 2 runs returned)\n\n| # | DAG run id | State | Started | Ended | Duration |\n|---|---|---|---|---|---|\n| 1 (latest) | `manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7` | **success** | 2026-11-15T16:36:32Z | 2026-11-15T16:37:22Z | ~50 s |\n| 2 (previous) | `manual__2026-11-15T16:22:36.283041+00:00_jCFmNu8z` | **failed** | 2026-11-15T16:22:58Z | 2026-11-15T16:24:25Z | ~86 s |\n\nBoth were `manual` runs; `logical_date` is null for both.\n\n**Task states â latest run (`...lqRXpJF7`, success)**\n\n| Task | State | Try | Duration |\n|---|---|---|---|\n| `validate_dataset` | success | 1 | 10.5 s |\n| `preprocess` | success | 1 | 10.0 s |\n| `train_model` | success | 1 | 11.7 s |\n| `evaluate_and_log` | success | 1 | -26.4 s â ï¸ |\n| `apply_model_quality_gate` | success | 1 | 17.9 s |\n\nNo failed tasks; `root_cause_candidates: []`.\n\n**Task states â previous run (`...jCFmNu8z`, failed)**\n\n| Task | State | Try | Duration |\n|---|---|---|---|\n| `validate_dataset` | success | 1 | 20.7 s |\n| `preprocess` | success | 1 | 20.2 s |\n| `train_model` | success | 1 | 10.0 s |\n| `evaluate_and_log` | **failed** | 3 | 14.3 s |\n| `apply_model_quality_gate` | **upstream_failed** | 0 | 0.0 s |\n\nRoot-cause candidate reported: `evaluate_and_log` (3rd attempt). `apply_model_quality_gate` never ran because it was blocked upstream.\n\n### (a) Known facts\n- Latest `training_pipeline` run succeeded end-to-end; the run before it failed at `evaluate_and_log`, which blocked the quality gate.\n\n### (b) Uncertainties\n- The negative duration (-26.4 s) reported for `evaluate_and_log` in the successful run is an internal data anomaly; I can\u0027t interpret it from these tool results.\n- The recorded \"success\" of `apply_model_quality_gate` only tells you the task completed â it does not tell you whether the gate passed or what threshold/metric it used. That would need `get_task_diagnostics` on that task (and the run\u0027s logged metrics) to confirm.\n- The failure reason for the earlier run is not yet established beyond the failing task name; logs weren\u0027t pulled.\n- Only 2 runs are visible; I can\u0027t show a longer history.\n\n### (c) Recommended next steps (read-only)\n1. Pull the log tail for the failed `evaluate_and_log` (run `...jCFmNu8z`, try 3) and for `apply_model_quality_gate` in the latest run to see whether the gate actually passed or was skipped/warned.\n2. If you want, I can also look at the MLflow runs from that successful DAG run to see the dataset version used and the metrics logged.\n\nNote: re-running the pipeline (`trigger_training_dag`) is a state-changing action and needs your explicit confirmation â I won\u0027t trigger it unless you ask.\n\n**Known facts (from tool evidence)**\n- Airflow: latest training_pipeline state=success; recent: manual__2026-11-15T16:36:31.=success, manual__2026-11-15T16:22:36.=failed.\n- Airflow: run manual__2026-11-15T16:22:36.283041+00:00_jCFmNu8z failed at [\u0027evaluate_and_log\u0027] (downstream: [\u0027apply_model_quality_gate\u0027]).\n- Airflow: 1 DAG(s); approved for triggering: [\u0027training_pipeline\u0027].",
+                         "known_facts":  [
+                                             "Airflow: latest training_pipeline state=success; recent: manual__2026-11-15T16:36:31.=success, manual__2026-11-15T16:22:36.=failed.",
+                                             "Airflow: run manual__2026-11-15T16:22:36.283041+00:00_jCFmNu8z failed at [\u0027evaluate_and_log\u0027] (downstream: [\u0027apply_model_quality_gate\u0027]).",
+                                             "Airflow: 1 DAG(s); approved for triggering: [\u0027training_pipeline\u0027]."
+                                         ],
+                         "uncertainties":  [
+
+                                           ],
+                         "recommended_actions":  [
+
+                                                 ],
+                         "evidence":  [
+                                          {
+                                              "tool":  "get_dag_run_status",
+                                              "status":  "ok",
+                                              "request_id":  "d54ad27d9f47",
+                                              "duration_ms":  929.71,
+                                              "summary":  "ok (latest_state=success)"
+                                          },
+                                          {
+                                              "tool":  "list_airflow_dags",
+                                              "status":  "ok",
+                                              "request_id":  "d54ad27d9f47",
+                                              "duration_ms":  107.31,
+                                              "summary":  "ok (count=1)"
+                                          },
+                                          {
+                                              "tool":  "find_failed_tasks",
+                                              "status":  "ok",
+                                              "request_id":  "d54ad27d9f47",
+                                              "duration_ms":  3772.74,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "find_failed_tasks",
+                                              "status":  "ok",
+                                              "request_id":  "d54ad27d9f47",
+                                              "duration_ms":  4388.23,
+                                              "summary":  "ok"
+                                          }
+                                      ],
+                         "tools_used":  [
+                                            "get_dag_run_status",
+                                            "list_airflow_dags",
+                                            "find_failed_tasks",
+                                            "find_failed_tasks"
+                                        ],
+                         "pending_confirmation":  [
+
+                                                  ]
+                     }
+    },
+    {
+        "scenario":  "kubernetes",
+        "source":  "evidence\\live-agent-kubernetes.json",
+        "response":  {
+                         "request_id":  "1f694fc62545",
+                         "answer":  "## iris-inference deployment â diagnosis\n\nNamespace: `mlops-agent`\n\n### â\u0085 Known facts (all from tool output)\n\n**Replica \u0026 readiness**\n| Item | Value |\n|---|---|\n| Deployment | `iris-inference` |\n| Desired / Ready / Available | **2 / 2 / 2** |\n| Overall healthy | **true** |\n| Generation / observed | 6 / 6 (rolled out, in sync) |\n\n**Pods** (both on `desktop-control-plane`)\n| Pod | Phase | Ready | Restarts | Image | Age |\n|---|---|---|---|---|---|\n| `iris-inference-7d9b97cf76-cmc6v` | Running | true | 0 | `docker.io/library/mlops-inference:1.0.0` | ~1790s |\n| `iris-inference-7d9b97cf76-w8pg5` | Running | true | 0 | `docker.io/library/mlops-inference:1.0.0` | ~1801s |\n\n**Image / version**\n- Image: `mlops-inference:1.0.0` (tag `1.0.0`)\n- App version label = ConfigMap app version = **`1.0.0`**\n\n**Model run**\n- Run ID: `82ac68fa015345afa553f1c4898660b8` (\"kindly-lynx-435\"), experiment 1, status **FINISHED**\n- Metrics: f1 **0.97561**, accuracy 0.96951, precision 0.97087, recall 0.98039\n- Params: n_estimators 200, max_depth 8\n- Quality gate: **passed**\n\n**Dataset**\n- Deployed ConfigMap dataset version: **`data-v2`**\n- Workspace/current pointer: `data/dataset.csv`, version `data-v2`, DVC md5 `761733f980870acabad9ead42a09fe8a`, git commit `6af2456â¦`\n- Provenance cross-check: the deployed run recorded `data-v2` with the **same md5** (`761733f9â¦`), and it **matches the current pointer** â so the running model, its recorded dataset, and the current dataset agree.\n\n### â ï¸ Uncertainties / caveats\n\n- **Readiness-probe warning events exist but appear to be startup transients.** Warning events name older pod-template hashes (`c74d8b469` with 25Ã 503s, `579d657969`, `855bf9b998`) plus **1 event each** for the two *current* pods (`connect: connection refused`). The current pods are now `Ready=true` with **0 restarts**, and their log tail shows continuous `200 OK` on `/health` and `/ready`. So the refusals most likely occurred before the app bound port 8000; they are not current failures. I cannot confirm from these tools whether the older pod hashes\u0027 503 events indicate a *previously* failing revision â I have no historical rollout timeline.\n- **A passing quality gate and good metrics do not by themselves prove production readiness.** There\u0027s no serving-level check here (latency, error rate, `/predict` correctness, traffic) and no SLO data.\n- **Freshness:** I only have the dataset commit timestamp for `data-v2`; I have **no stated freshness policy**, so I can neither confirm nor deny a freshness breach.\n- Probes/endpoints for the Service weren\u0027t inspected (no errors found, but not separately verified beyond pod readiness).\n\n### ð§ Recommended actions\n\n1. **No action required right now** â 2/2 ready, 0 restarts, version and provenance consistent. This is a healthy deployment.\n2. If you want the prior-probe-failure question settled, I can pull the Service/ready-endpoints and full pod events/logs (`list_k8s_services`, `get_pod_details`) to confirm the 503 events are historical and not a recurring readiness flap.\n3. **No retraining warranted or suggested.** The quality gate passed and no freshness policy breach has been supplied. I will not trigger any training run without an explicit request from you (and triggering requires your explicit confirmation).\n\nWould you like me to verify the Service endpoints / probe history next?\n\n**Known facts (from tool evidence)**\n- DVC: run 82ac68fa used dataset version data-v2 (md5 761733f9, git commit 6af245623b); commit present in local repo: True.\n- DVC: current version of data/dataset.csv is data-v2 (md5 761733f9, HEAD 6af245623b).\n- Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.\n- Kubernetes: deployed image(s) [\u0027mlops-inference:1.0.0\u0027]; app version 1.0.0; model run 82ac68fa015345afa553f1c4898660b8; dataset data-v2.\n- Kubernetes: 0 unhealthy pod(s).\n- Kubernetes: iris-inference 2/2 ready; 2 pod(s).",
+                         "known_facts":  [
+                                             "DVC: run 82ac68fa used dataset version data-v2 (md5 761733f9, git commit 6af245623b); commit present in local repo: True.",
+                                             "DVC: current version of data/dataset.csv is data-v2 (md5 761733f9, HEAD 6af245623b).",
+                                             "Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.",
+                                             "Kubernetes: deployed image(s) [\u0027mlops-inference:1.0.0\u0027]; app version 1.0.0; model run 82ac68fa015345afa553f1c4898660b8; dataset data-v2.",
+                                             "Kubernetes: 0 unhealthy pod(s).",
+                                             "Kubernetes: iris-inference 2/2 ready; 2 pod(s)."
+                                         ],
+                         "uncertainties":  [
+
+                                           ],
+                         "recommended_actions":  [
+
+                                                 ],
+                         "evidence":  [
+                                          {
+                                              "tool":  "diagnose_deployment",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  6401.2,
+                                              "summary":  "ok (healthy=True)"
+                                          },
+                                          {
+                                              "tool":  "list_k8s_workloads",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  83.87,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_deployed_version",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  99.46,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "find_unhealthy_pods",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  85.5,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_mlflow_run_details",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  89.75,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_dataset_version",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  524.95,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_experiment_dataset",
+                                              "status":  "ok",
+                                              "request_id":  "1f694fc62545",
+                                              "duration_ms":  118.2,
+                                              "summary":  "ok"
+                                          }
+                                      ],
+                         "tools_used":  [
+                                            "diagnose_deployment",
+                                            "list_k8s_workloads",
+                                            "get_deployed_version",
+                                            "find_unhealthy_pods",
+                                            "get_mlflow_run_details",
+                                            "get_dataset_version",
+                                            "get_experiment_dataset"
+                                        ],
+                         "pending_confirmation":  [
+
+                                                  ]
+                     }
+    },
+    {
+        "scenario":  "multitool",
+        "source":  "evidence\\live-agent-multitool.json",
+        "response":  {
+                         "request_id":  "89e6d6a2ce63",
+                         "answer":  "## Report\n\n### 1. Best recent model\n- **Run ID:** `61fc62922cd64d7eb8862e1e39377030` (experiment `breast-cancer-classifier`, id 1)\n- **Run name:** `airflow-manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7`, status FINISHED\n- **Metrics:** f1 = 0.97561, accuracy = 0.96951, precision = 0.97087, recall = 0.98039\n- **Params:** n_estimators = 200, max_depth = 8\n- **Quality gate:** passed\n- **Selection basis:** max f1 among the 4 most recent finished runs.\n- â ï¸ Note: all 4 recent runs have an **identical** f1 (0.97561) and identical params â the \"best\" pick is effectively a tie-break, not a genuine improvement.\n\n### 2. Dataset version used by that run\n- Recorded provenance: `md5:761733f9` â full md5 `761733f980870acabad9ead42a09fe8a`, path `data/dataset.csv`, git commit **null** (not recorded; that commit does not exist in the local repo).\n- That md5 **matches the current workspace pointer**, which corresponds to the DVC version label **`data-v2`** (same md5, size 268,569 bytes, last changed commit `6af2456`).\n\n### 3. Kubernetes deployment status\n- Deployment `iris-inference` (namespace `mlops-agent`): **2/2 desired, 2 ready, 2 available** â healthy. Image `mlops-inference:1.0.0`.\n- Both pods `Running`/ready, **0 restarts**.\n- Deployed config reports `model_run_id = 82ac68fa015345afa553f1c4898660b8`, `dataset_version = data-v2`, generation 6 = observed generation 6.\n- â ï¸ The deployed model run (`82ac68faâ¦`) is **not** the best run identified above â they are different runs with the same f1 score.\n\n### 4. Latest Airflow run status\n- `training_pipeline` latest run `manual__2026-11-15T16:36:31â¦` â **success** (16:36â16:37).\n- Previous run `manual__2026-11-15T16:22:36â¦` â **failed**.\n\n---\n\n**Uncertainties / gaps**\n- The best run\u0027s dataset provenance records an md5 but **no git commit**, and the recorded commit is absent locally â so it isn\u0027t pinned to a reproducible revision via that field (the md5 does match `data-v2`).\n- No online/drift/latency evidence was gathered; offline f1 alone does not establish production readiness (the tool flags this explicitly).\n- I did not investigate the previous Airflow run\u0027s failure â that would require a separate diagnostics call.\n\n**Recommended actions (nothing triggered)**\n- If you want the best run to actually serve, note the deployment currently runs a *different* run id; promoting `61fc6292â¦` would require a deploy/rollout action â confirm with me first if desired.\n- Optionally investigate the failed run `manual__2026-11-15T16:22:36â¦` to confirm the pipeline is now reliably green.\n\nNo state-changing actions were taken.\n\nNote: unavailable evidence - find_best_run (error).\n\n**Known facts (from tool evidence)**\n- MLflow: best of the 4 most recent finished runs by f1 is run 61fc6292 (f1=0.97561, params {\u0027n_estimators\u0027: \u0027200\u0027, \u0027max_depth\u0027: \u00278\u0027, \u0027airflow_run_id\u0027: \u0027manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7\u0027}, started 2026-11-15T16:37:03Z).\n- MLflow: 4 runs listed.\n- DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.\n- DVC: current version of data/dataset.csv is data-v2 (md5 761733f9, HEAD 6af245623b).\n- Kubernetes: deployed image(s) [\u0027mlops-inference:1.0.0\u0027]; app version 1.0.0; model run 82ac68fa015345afa553f1c4898660b8; dataset data-v2.\n- Deployed model run (82ac68fa) differs from the best candidate (61fc6292).\n- Kubernetes: iris-inference 2/2 ready; 2 pod(s).\n- Airflow: latest training_pipeline state=success; recent: manual__2026-11-15T16:36:31.=success, manual__2026-11-15T16:22:36.=failed.\n- Retraining assessment: no retraining trigger found in the evidence that WAS collected (no failed quality gate, freshness policy of 30 days not exceeded, no degradation results supplied).\n\n**Uncertainties**\n- MLflow evidence unavailable (find_best_run: error - ValueError: experiment \u0027None\u0027 not found). Nothing is claimed about it.\n- MLflow: 4 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n- The assessment is incomplete because evidence from [\u0027find_best_run\u0027] was unavailable; a failed pipeline run or unhealthy deployment cannot be excluded.\n- No online performance/drift monitoring data is available; supply degradation results if you have them.\n\n**Recommended actions**\n- Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain).",
+                         "known_facts":  [
+                                             "MLflow: best of the 4 most recent finished runs by f1 is run 61fc6292 (f1=0.97561, params {\u0027n_estimators\u0027: \u0027200\u0027, \u0027max_depth\u0027: \u00278\u0027, \u0027airflow_run_id\u0027: \u0027manual__2026-11-15T16:36:31.372846+00:00_lqRXpJF7\u0027}, started 2026-11-15T16:37:03Z).",
+                                             "MLflow: 4 runs listed.",
+                                             "DVC: run 61fc6292 used dataset version md5:761733f9 (md5 761733f9, git commit ?); commit present in local repo: False.",
+                                             "DVC: current version of data/dataset.csv is data-v2 (md5 761733f9, HEAD 6af245623b).",
+                                             "Kubernetes: deployed image(s) [\u0027mlops-inference:1.0.0\u0027]; app version 1.0.0; model run 82ac68fa015345afa553f1c4898660b8; dataset data-v2.",
+                                             "Deployed model run (82ac68fa) differs from the best candidate (61fc6292).",
+                                             "Kubernetes: iris-inference 2/2 ready; 2 pod(s).",
+                                             "Airflow: latest training_pipeline state=success; recent: manual__2026-11-15T16:36:31.=success, manual__2026-11-15T16:22:36.=failed.",
+                                             "Retraining assessment: no retraining trigger found in the evidence that WAS collected (no failed quality gate, freshness policy of 30 days not exceeded, no degradation results supplied)."
+                                         ],
+                         "uncertainties":  [
+                                               "MLflow evidence unavailable (find_best_run: error - ValueError: experiment \u0027None\u0027 not found). Nothing is claimed about it.",
+                                               "MLflow: 4 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
+                                               "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)",
+                                               "The assessment is incomplete because evidence from [\u0027find_best_run\u0027] was unavailable; a failed pipeline run or unhealthy deployment cannot be excluded.",
+                                               "No online performance/drift monitoring data is available; supply degradation results if you have them."
+                                           ],
+                         "recommended_actions":  [
+                                                     "Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain)."
+                                                 ],
+                         "evidence":  [
+                                          {
+                                              "tool":  "find_best_run",
+                                              "status":  "error",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  196.43,
+                                              "summary":  "error: ValueError: experiment \u0027None\u0027 not found"
+                                          },
+                                          {
+                                              "tool":  "list_k8s_workloads",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  5867.99,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_dag_run_status",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  257.98,
+                                              "summary":  "ok (latest_state=success)"
+                                          },
+                                          {
+                                              "tool":  "list_mlflow_experiments",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  65.12,
+                                              "summary":  "ok (count=2)"
+                                          },
+                                          {
+                                              "tool":  "find_best_run",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  143.07,
+                                              "summary":  "ok (best run 61fc6292)"
+                                          },
+                                          {
+                                              "tool":  "list_mlflow_runs",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  89.38,
+                                              "summary":  "ok (count=4)"
+                                          },
+                                          {
+                                              "tool":  "get_deployed_version",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  84.9,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_experiment_dataset",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  31.09,
+                                              "summary":  "ok"
+                                          },
+                                          {
+                                              "tool":  "get_dataset_version",
+                                              "status":  "ok",
+                                              "request_id":  "89e6d6a2ce63",
+                                              "duration_ms":  462.02,
+                                              "summary":  "ok"
+                                          }
+                                      ],
+                         "tools_used":  [
+                                            "find_best_run",
+                                            "list_k8s_workloads",
+                                            "get_dag_run_status",
+                                            "list_mlflow_experiments",
+                                            "find_best_run",
+                                            "list_mlflow_runs",
+                                            "get_deployed_version",
+                                            "get_experiment_dataset",
+                                            "get_dataset_version"
+                                        ],
+                         "pending_confirmation":  [
+
+                                                  ]
+                     }
     }
-  },
-  {
-    "scenario": "2. Model selection",
-    "query": "Compare the last five training runs and recommend the best candidate based on F1 score.",
-    "response": {
-      "request_id": "3279882c0f43",
-      "answer": "**Known facts (from tool evidence)**\n- MLflow: compared 5 runs on f1; leader 485ce030; params that differ: ['airflow_run_id', 'max_depth', 'n_estimators'].\n- MLflow: run 485ce030 (airflow-manual__2026-11-09T08:15:00.031313+00:00) FAILED the quality gate (f1=0.97561) and must not be promoted.\n- MLflow: run 27210d8a (injected-weak-model) FAILED the quality gate (f1=0.94737) and must not be promoted.\n- MLflow: run be8740ae (rf-v2-strict-gate) FAILED the quality gate (f1=0.94737) and must not be promoted.\n\n**Uncertainties**\n- A higher metric on one split does not by itself make a model production-ready.",
-      "known_facts": [
-        "MLflow: compared 5 runs on f1; leader 485ce030; params that differ: ['airflow_run_id', 'max_depth', 'n_estimators'].",
-        "MLflow: run 485ce030 (airflow-manual__2026-11-09T08:15:00.031313+00:00) FAILED the quality gate (f1=0.97561) and must not be promoted.",
-        "MLflow: run 27210d8a (injected-weak-model) FAILED the quality gate (f1=0.94737) and must not be promoted.",
-        "MLflow: run be8740ae (rf-v2-strict-gate) FAILED the quality gate (f1=0.94737) and must not be promoted."
-      ],
-      "uncertainties": [
-        "A higher metric on one split does not by itself make a model production-ready."
-      ],
-      "recommended_actions": [],
-      "evidence": [
-        {
-          "tool": "compare_mlflow_runs",
-          "status": "ok",
-          "request_id": "3279882c0f43",
-          "duration_ms": 10.91,
-          "summary": "ok"
-        }
-      ],
-      "tools_used": [
-        "compare_mlflow_runs"
-      ],
-      "pending_confirmation": []
-    }
-  },
-  {
-    "scenario": "3. Pipeline execution",
-    "query": "Show the status of the latest training pipeline runs in Airflow.",
-    "response": {
-      "request_id": "32cdc4a448a2",
-      "answer": "**Known facts (from tool evidence)**\n- MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).\n- Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED.\n\n**Uncertainties**\n- MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n\n**Recommended actions**\n- `trigger_training_dag` changes state and was NOT executed. Re-submit with confirm=true to authorise it.\n- Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it.",
-      "known_facts": [
-        "MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).",
-        "Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED."
-      ],
-      "uncertainties": [
-        "MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
-        "MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate",
-        "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)"
-      ],
-      "recommended_actions": [
-        "`trigger_training_dag` changes state and was NOT executed. Re-submit with confirm=true to authorise it.",
-        "Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it."
-      ],
-      "evidence": [
-        {
-          "tool": "find_best_run",
-          "status": "ok",
-          "request_id": "32cdc4a448a2",
-          "duration_ms": 9.51,
-          "summary": "ok (best run 485ce030)"
-        },
-        {
-          "tool": "trigger_training_dag",
-          "status": "confirmation_required",
-          "request_id": "32cdc4a448a2",
-          "duration_ms": 0.01,
-          "summary": "confirmation_required: 'trigger_training_dag' changes system state. Re-submit the request with confirm=true to authorise it."
-        }
-      ],
-      "tools_used": [
-        "find_best_run",
-        "trigger_training_dag"
-      ],
-      "pending_confirmation": [
-        "trigger_training_dag"
-      ]
-    }
-  },
-  {
-    "scenario": "4. Deployment diagnosis",
-    "query": "Why is my prediction API unavailable?",
-    "response": {
-      "request_id": "ea80f4a7b3ec",
-      "answer": "**Known facts (from tool evidence)**\n- Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.",
-      "known_facts": [
-        "Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True."
-      ],
-      "uncertainties": [],
-      "recommended_actions": [],
-      "evidence": [
-        {
-          "tool": "diagnose_deployment",
-          "status": "ok",
-          "request_id": "ea80f4a7b3ec",
-          "duration_ms": 0.41,
-          "summary": "ok (healthy=True)"
-        }
-      ],
-      "tools_used": [
-        "diagnose_deployment"
-      ],
-      "pending_confirmation": []
-    }
-  },
-  {
-    "scenario": "5. Multi-tool reasoning",
-    "query": "Find the best recent model, identify the dataset version used to train it, check the deployment status, and explain whether retraining is necessary.",
-    "response": {
-      "request_id": "8ec4542bf692",
-      "answer": "**Known facts (from tool evidence)**\n- MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).\n- DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.\n- Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.\n- Kubernetes: deployed image(s) ['mlops-inference:1.0.0']; app version 1.0.0; model run bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; dataset data-v2.\n- Deployed model run (bbbbbbbb) differs from the best candidate (485ce030).\n- Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED.\n\n**Uncertainties**\n- Airflow evidence unavailable (get_dag_run_status: error - ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8080): Max retries exceeded with url: /auth/token (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8080): Failed to establish a new connection: [Errno 111] Connection refused\"))). Nothing is claimed about it.\n- MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.\n- MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate\n- MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)\n\n**Recommended actions**\n- Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain).\n- Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it.",
-      "known_facts": [
-        "MLflow: best of the 5 most recent finished runs by f1 is run 485ce030 (f1=0.97561, params {'n_estimators': '200', 'max_depth': '8', 'airflow_run_id': 'manual__2026-11-09T08:15:00.031313+00:00'}, started 2026-11-09T08:15:05Z).",
-        "DVC: run 485ce030 used dataset version data-v2 (md5 a844f94d, git commit b334e03891); commit present in local repo: True.",
-        "Kubernetes: deployment iris-inference has 2/2 replicas ready; healthy=True.",
-        "Kubernetes: deployed image(s) ['mlops-inference:1.0.0']; app version 1.0.0; model run bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; dataset data-v2.",
-        "Deployed model run (bbbbbbbb) differs from the best candidate (485ce030).",
-        "Retraining assessment: justified because the best candidate's quality gate is recorded as FAILED."
-      ],
-      "uncertainties": [
-        "Airflow evidence unavailable (get_dag_run_status: error - ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8080): Max retries exceeded with url: /auth/token (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8080): Failed to establish a new connection: [Errno 111] Connection refused\"))). Nothing is claimed about it.",
-        "MLflow: 3 runs tie on f1=0.97561; the choice among them rests on recency/other criteria, not on this metric.",
-        "MLflow: quality gate is 'failed'; the candidate was not validated by the pipeline gate",
-        "MLflow: offline metrics alone do not establish production readiness (no online/drift/latency evidence here)"
-      ],
-      "recommended_actions": [
-        "Consider promoting the better candidate through the normal deploy process (a redeploy, not a retrain).",
-        "Retraining is recommended but NOT started automatically. Ask explicitly for the training DAG trigger and confirm it."
-      ],
-      "evidence": [
-        {
-          "tool": "find_best_run",
-          "status": "ok",
-          "request_id": "8ec4542bf692",
-          "duration_ms": 8.66,
-          "summary": "ok (best run 485ce030)"
-        },
-        {
-          "tool": "get_experiment_dataset",
-          "status": "ok",
-          "request_id": "8ec4542bf692",
-          "duration_ms": 8.34,
-          "summary": "ok"
-        },
-        {
-          "tool": "diagnose_deployment",
-          "status": "ok",
-          "request_id": "8ec4542bf692",
-          "duration_ms": 0.52,
-          "summary": "ok (healthy=True)"
-        },
-        {
-          "tool": "get_deployed_version",
-          "status": "ok",
-          "request_id": "8ec4542bf692",
-          "duration_ms": 0.25,
-          "summary": "ok"
-        },
-        {
-          "tool": "get_dag_run_status",
-          "status": "error",
-          "request_id": "8ec4542bf692",
-          "duration_ms": 2.29,
-          "summary": "error: ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8080): Max retries exceeded with url: /auth/token (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8080): Failed t"
-        }
-      ],
-      "tools_used": [
-        "find_best_run",
-        "get_experiment_dataset",
-        "diagnose_deployment",
-        "get_deployed_version",
-        "get_dag_run_status"
-      ],
-      "pending_confirmation": []
-    }
-  }
 ]

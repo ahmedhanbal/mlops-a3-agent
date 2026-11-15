@@ -6,6 +6,6 @@ metadata:
 data:                      # NON-sensitive configuration only
   APP_VERSION: "1.0.0"
   MODEL_PATH: "models/model.joblib"
-  MODEL_RUN_ID: "REPLACE_WITH_MLFLOW_RUN_ID"
+  MODEL_RUN_ID: "82ac68fa015345afa553f1c4898660b8"
   DATASET_VERSION: "data-v2"
   LOG_LEVEL: "INFO"
